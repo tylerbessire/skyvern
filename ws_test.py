@@ -36,27 +36,36 @@ logging.basicConfig(
     ]
 )
 
+from typing import List, Dict, Optional, Any, Union, Tuple, Protocol
+import websockets
+from websockets.typing import Data
+
+class WebSocketProtocol(Protocol):
+    async def send(self, message: str) -> None: ...
+    async def recv(self) -> Data: ...
+    async def close(self, code: int = 1000, reason: str = "") -> None: ...
+
 class CrashWebsocketTester:
-    def __init__(self):
+    def __init__(self) -> None:
         # Generate required Socket.IO parameters
-        self.sid = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
-        self.t = str(int(time.time() * 1000))
+        self.sid: str = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
+        self.t: str = str(int(time.time() * 1000))
         
         # Use proper Socket.IO v4 connection URL format
-        query_params = {
+        query_params: Dict[str, str] = {
             'EIO': '4',
             'transport': 'websocket',
             't': self.t,
             'sid': self.sid
         }
-        query_string = '&'.join(f'{k}={v}' for k, v in query_params.items())
-        self.uri = f"wss://trustdice.win/crash/socket.io/?{query_string}"
+        query_string: str = '&'.join(f'{k}={v}' for k, v in query_params.items())
+        self.uri: str = f"wss://trustdice.win/crash/socket.io/?{query_string}"
         
         # Connection state
-        self.last_crash_time = None
-        self.crash_intervals = []
-        self.multiplier_sequence = []
-        self.state_transitions = []
+        self.last_crash_time: Optional[float] = None
+        self.crash_intervals: List[float] = []
+        self.multiplier_sequence: List[float] = []
+        self.state_transitions: List[Dict[str, Any]] = []
         
         # Authentication headers
         self.headers = {
@@ -70,10 +79,10 @@ class CrashWebsocketTester:
         # Log initialization
         logging.info("WebSocket test initialized")
         
-    async def connect(self):
-        reconnect_delay = 5
-        max_retries = 5
-        retry_count = 0
+    async def connect(self) -> bool:
+        reconnect_delay: int = 5
+        max_retries: int = 5
+        retry_count: int = 0
         
         while retry_count < max_retries:
             try:
@@ -98,7 +107,7 @@ class CrashWebsocketTester:
                     except websockets.exceptions.ConnectionClosed as e:
                         if e.code == 1000:  # Normal closure
                             logging.info("Connection closed normally")
-                            return
+                            return True
                         logging.error(f"Connection closed unexpectedly: {str(e)}")
                         
                     except Exception as e:
@@ -112,7 +121,7 @@ class CrashWebsocketTester:
                     logging.error("Authentication failed. Checking credentials...")
                     if not WALLET_PRIVATE_KEY or not PUBLIC_KEY:
                         logging.error("Missing authentication keys. Please check environment variables.")
-                        return
+                        return False
                     logging.info(f"Retrying connection in {reconnect_delay} seconds... (Attempt {retry_count + 1}/{max_retries})")
                     
                 elif "401" in error_msg:
@@ -132,7 +141,7 @@ class CrashWebsocketTester:
                     
                 else:
                     logging.error(f"Connection failed: {error_msg}")
-                    return
+                    return False
                     
             except Exception as e:
                 logging.error(f"Connection error: {str(e)}")
@@ -143,32 +152,32 @@ class CrashWebsocketTester:
                 await asyncio.sleep(reconnect_delay)
             else:
                 logging.error("Max retries reached. Exiting...")
-                return
+                return False
 
-    async def process_message(self, websocket, message):
+    async def process_message(self, websocket: WebSocketProtocol, message: Data) -> None:
         try:
             # Handle different Socket.IO message types
-            if message.startswith('0'):  # Socket.IO open
+            if isinstance(message, str) and message.startswith('0'):  # Socket.IO open
                 logging.info("Socket.IO connection opened")
                 return
                 
-            if message.startswith('40'):  # Socket.IO connection
+            if isinstance(message, str) and message.startswith('40'):  # Socket.IO connection
                 logging.info("Socket.IO namespace connected")
                 await self.send_auth_sequence(websocket)
                 return
 
-            if message.startswith('2'):  # Socket.IO ping
+            if isinstance(message, str) and message.startswith('2'):  # Socket.IO ping
                 logging.debug("Received ping")
                 await websocket.send('3')  # Send pong
                 return
 
-            if message.startswith('3'):  # Socket.IO pong
+            if isinstance(message, str) and message.startswith('3'):  # Socket.IO pong
                 logging.debug("Received pong")
                 return
 
             # Try to parse as JSON if it's a data message
             try:
-                if message.startswith('42'):  # Socket.IO event
+                if isinstance(message, str) and message.startswith('42'):  # Socket.IO event
                     data = json.loads(message[2:])
                     await self.handle_game_data(data)
                     
@@ -182,7 +191,7 @@ class CrashWebsocketTester:
                         })
                         
             except json.JSONDecodeError:
-                if '401' in message or 'unauthorized' in message.lower():
+                if isinstance(message, str) and ('401' in message or 'unauthorized' in message.lower()):
                     logging.warning("Authentication error detected")
                     self.state_transitions.append({
                         'time': time.time(),
@@ -195,7 +204,7 @@ class CrashWebsocketTester:
         except Exception as e:
             logging.error(f"Error processing message: {str(e)}")
 
-    async def send_auth_sequence(self, websocket):
+    async def send_auth_sequence(self, websocket: WebSocketProtocol) -> None:
         """Send the authentication sequence observed in successful connections"""
         try:
             # Initial Socket.IO handshake
@@ -233,7 +242,7 @@ class CrashWebsocketTester:
         except Exception as e:
             logging.error(f"Error in auth sequence: {str(e)}")
             
-    async def heartbeat_loop(self, websocket):
+    async def heartbeat_loop(self, websocket: WebSocketProtocol) -> None:
         """Maintain connection with periodic heartbeats"""
         try:
             while True:
@@ -248,7 +257,7 @@ class CrashWebsocketTester:
             logging.info("Heartbeat loop cancelled")
             return
 
-    async def handle_game_data(self, data):
+    async def handle_game_data(self, data: List[Any]) -> None:
         try:
             event_type = data[0] if len(data) > 0 else None
             event_data = data[1] if len(data) > 1 else None
@@ -338,7 +347,7 @@ class CrashWebsocketTester:
             if last_interval > 45.0:
                 logging.warning(f"EXTENDED INTERVAL DETECTED: {last_interval:.2f}s")
 
-async def main():
+async def main() -> None:
     tester = CrashWebsocketTester()
     while True:
         try:

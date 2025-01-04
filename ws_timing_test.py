@@ -17,20 +17,29 @@ logging.basicConfig(
     ]
 )
 
+from typing import List, Tuple, Dict, Optional, Any, Union, Protocol
+import websockets
+from websockets.typing import Data
+
+class WebSocketProtocol(Protocol):
+    async def send(self, message: str) -> None: ...
+    async def recv(self) -> Data: ...
+    async def close(self, code: int = 1000, reason: str = "") -> None: ...
+
 class WSTimingAnalyzer:
-    def __init__(self):
-        self.crash_times = []
-        self.message_times = []
-        self.pre_crash_messages = []
-        self.auth_timing = []
-        self.undefined_timing = []
-        self.last_crash = None
-        self.crash_intervals = []
+    def __init__(self) -> None:
+        self.crash_times: List[float] = []
+        self.message_times: List[Tuple[float, str]] = []
+        self.pre_crash_messages: List[List[Tuple[float, str]]] = []
+        self.auth_timing: List[float] = []
+        self.undefined_timing: List[float] = []
+        self.last_crash: Optional[float] = None
+        self.crash_intervals: List[float] = []
         
-    def analyze_timing(self, message, timestamp):
+    def analyze_timing(self, message: Data, timestamp: float) -> None:
         """Analyze timing patterns in WebSocket messages"""
         try:
-            if message.startswith("42"):
+            if isinstance(message, str) and message.startswith("42"):
                 data = json.loads(message[2:])
                 if len(data) >= 2:
                     event_name = data[0]
@@ -68,7 +77,7 @@ class WSTimingAnalyzer:
         except Exception as e:
             logging.error(f"Error analyzing timing: {str(e)}")
             
-    def analyze_intervals(self):
+    def analyze_intervals(self) -> None:
         """Analyze patterns in crash intervals"""
         recent = self.crash_intervals[-3:]
         avg_interval = sum(recent) / 3
@@ -81,19 +90,19 @@ class WSTimingAnalyzer:
         if all(recent[i] > recent[i + 1] for i in range(len(recent) - 1)):
             logging.warning("Decreasing crash intervals detected")
             
-    def analyze_auth_pattern(self):
+    def analyze_auth_pattern(self) -> None:
         """Analyze authentication error patterns"""
         recent = self.auth_timing[-2:]
         if recent[1] - recent[0] < 2.0:
             logging.warning(f"Rapid auth errors: {recent[1] - recent[0]:.2f}s apart")
             
-    def analyze_undefined_pattern(self):
+    def analyze_undefined_pattern(self) -> None:
         """Analyze undefined state patterns"""
         recent = self.undefined_timing[-2:]
         if recent[1] - recent[0] < 1.0:
             logging.warning(f"Rapid undefined states: {recent[1] - recent[0]:.2f}s apart")
             
-    def get_statistics(self):
+    def get_statistics(self) -> Dict[str, float]:
         """Get current timing statistics"""
         stats = {
             "total_crashes": len(self.crash_times),
@@ -104,7 +113,7 @@ class WSTimingAnalyzer:
         }
         return stats
 
-async def test_ws_timing():
+async def test_ws_timing() -> None:
     analyzer = WSTimingAnalyzer()
     uri = "wss://trustdice.win/crash/socket.io/?EIO=4&transport=websocket"
     
