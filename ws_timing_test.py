@@ -35,10 +35,10 @@ class WSTimingAnalyzer:
                 if len(data) >= 2:
                     event_name = data[0]
                     event_data = data[1]
-                    
+
                     # Track all message timings
                     self.message_times.append((timestamp, event_name))
-                    
+
                     # Analyze crash events
                     if event_name == "crash.tick":
                         if self.last_crash:
@@ -52,13 +52,13 @@ class WSTimingAnalyzer:
                         # Store pre-crash messages
                         recent_messages = self.message_times[-5:]  # Last 5 messages
                         self.pre_crash_messages.append(recent_messages)
-                        
+
                     # Track authentication timing
                     if "401" in str(event_data):
                         self.auth_timing.append(timestamp)
                         if len(self.auth_timing) >= 2:
                             self.analyze_auth_pattern()
-                            
+
                     # Track undefined states timing
                     if "undefined" in str(event_data):
                         self.undefined_timing.append(timestamp)
@@ -76,9 +76,9 @@ class WSTimingAnalyzer:
         # Check for consistent intervals
         if all(abs(i - avg_interval) < 0.5 for i in recent):
             logging.warning(f"Consistent crash interval detected: {avg_interval:.2f}s")
-            
+
         # Check for decreasing intervals
-        if all(recent[i] > recent[i+1] for i in range(len(recent)-1)):
+        if all(recent[i] > recent[i + 1] for i in range(len(recent) - 1)):
             logging.warning("Decreasing crash intervals detected")
             
     def analyze_auth_pattern(self):
@@ -100,7 +100,7 @@ class WSTimingAnalyzer:
             "avg_interval": sum(self.crash_intervals) / len(self.crash_intervals) if self.crash_intervals else 0,
             "auth_errors": len(self.auth_timing),
             "undefined_states": len(self.undefined_timing),
-            "message_count": len(self.message_times)
+            "message_count": len(self.message_times),
         }
         return stats
 

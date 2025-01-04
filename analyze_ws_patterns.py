@@ -25,21 +25,21 @@ def analyze_timing_patterns(timing_file):
         logging.info(f"Interval standard deviation: {std_dev:.2f}s")
         
         # Look for patterns in intervals
-        for i in range(len(crash_intervals)-2):
+        for i in range(len(crash_intervals) - 2):
             seq = crash_intervals[i:i+3]
             if all(abs(x - seq[0]) < 0.5 for x in seq):
                 logging.warning(f"Found consistent interval pattern: {seq}")
     
     # Analyze authentication patterns
     if len(auth_timing) >= 2:
-        auth_gaps = [auth_timing[i+1] - auth_timing[i] for i in range(len(auth_timing)-1)]
+        auth_gaps = [auth_timing[i + 1] - auth_timing[i] for i in range(len(auth_timing) - 1)]
         rapid_auths = [gap for gap in auth_gaps if gap < 2.0]
         if rapid_auths:
             logging.warning(f"Found {len(rapid_auths)} rapid authentication attempts")
     
     # Analyze undefined states
     if len(undefined_timing) >= 2:
-        undefined_gaps = [undefined_timing[i+1] - undefined_timing[i] for i in range(len(undefined_timing)-1)]
+        undefined_gaps = [undefined_timing[i + 1] - undefined_timing[i] for i in range(len(undefined_timing) - 1)]
         rapid_undefined = [gap for gap in undefined_gaps if gap < 1.0]
         if rapid_undefined:
             logging.warning(f"Found {len(rapid_undefined)} rapid undefined states")
