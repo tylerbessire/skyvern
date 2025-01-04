@@ -1,26 +1,29 @@
 #!/usr/bin/env python3
 import asyncio
-import websockets
 import json
 import logging
 import os
-from urllib.parse import quote, urlencode
 import time
+from typing import Dict, List, Optional, Tuple, Union, Any, cast
+from urllib.parse import quote, urlencode
+
 import aiohttp
+import websockets
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from websockets.legacy.client import WebSocketClientProtocol
 
 # Configure detailed logging
 logging.basicConfig(
     level=logging.DEBUG,  # Enable debug logging
-    format='%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
+    format="%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
-        logging.FileHandler('ws_minimal_test.log'),
-        logging.StreamHandler()
+        logging.FileHandler("ws_minimal_test.log"),
+        logging.StreamHandler(),
     ]
 )
 
@@ -34,20 +37,26 @@ suspicious_patterns = {
 }
 
 class MinimalWSTest:
-    def __init__(self):
-        self.t = str(int(time.time() * 1000))
+    def __init__(self) -> None:
+        self.t: str = str(int(time.time() * 1000))
         # Use proper Socket.IO v4 URL format with crash namespace and browser-like parameters
-        self.uri = f"wss://trustdice.win/crash/socket.io/?EIO=4&transport=websocket&t={self.t}&sid={self.t}"
+        self.uri: str = f"wss://trustdice.win/crash/socket.io/?EIO=4&transport=websocket&t={self.t}&sid={self.t}"
+        
+        # Initialize session and websocket with proper type annotations
+        self.session: Optional[aiohttp.ClientSession] = None
+        self.websocket: Optional[WebSocketClientProtocol] = None
         
         # Initialize session and cookie management
-        self.session_id = None
-        self.last_ping = None
-        self.ping_interval = 25000  # Default Socket.IO ping interval
-        self.cookies = {}  # Store cookies
-        self.session = None
+        self.session_id: Optional[str] = None
+        self.last_ping: Optional[float] = None
+        self.ping_interval: int = 25000  # Default Socket.IO ping interval
+        self.cookies: Dict[str, str] = {}  # Store cookies
+        self.session: Optional[aiohttp.ClientSession] = None
+        self.websocket: Optional[WebSocketClientProtocol] = None
+        self.connected: bool = False
         
         # Track suspicious patterns
-        self.suspicious_patterns = {
+        self.suspicious_patterns: Dict[str, List[Union[float, Tuple[float, str]]]] = {
             'rapid_auth_errors': [],
             'long_intervals': [],
             'undefined_states': [],
@@ -64,22 +73,22 @@ class MinimalWSTest:
             
         # Enhanced browser-like headers
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Origin': 'https://trustdice.win',
-            'Connection': 'keep-alive',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'Pragma': 'no-cache',
-            'Cache-Control': 'no-cache',
-            'Upgrade-Insecure-Requests': '1'
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Origin": "https://trustdice.win",
+            "Connection": "keep-alive",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "sec-ch-ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "Pragma": "no-cache",
+            "Cache-Control": "no-cache",
+            "Upgrade-Insecure-Requests": "1",
         }
         
         # Initialize cookie jar with credentials
@@ -89,16 +98,21 @@ class MinimalWSTest:
         })
         
         # Track message patterns
-        self.last_crash_time = None
-        self.intervals = []
-        self.undefined_states = []
-        self.auth_errors = []
+        self.last_crash_time: Optional[float] = None
+        self.intervals: List[float] = []
+        self.undefined_states: List[float] = []
+        self.auth_errors: List[float] = []
+        self.element_counts: List[Tuple[float, int]] = []
+        self.bodytext_values: List[Tuple[float, int]] = []
+        self.error_sequence: List[Tuple[float, str]] = []
+        self.undefined_sequence: List[float] = []
+        self.last_401_time: Optional[float] = None
         
     def update_cookies(self, new_cookies):
         """Update cookies and cookie header"""
         self.cookies.update(new_cookies)
-        cookie_str = '; '.join([f"{k}={v}" for k, v in self.cookies.items()])
-        self.headers['Cookie'] = cookie_str
+        cookie_str = "; ".join([f"{k}={v}" for k, v in self.cookies.items()])
+        self.headers["Cookie"] = cookie_str
         logging.debug(f"Updated cookies: {cookie_str}")
         
     async def handle_message(self, message):
@@ -124,18 +138,18 @@ class MinimalWSTest:
                 self.undefined_sequence = []
             
             # Handle Socket.IO message types
-            if message.startswith('0'):  # Socket.IO open
+            if message.startswith("0"):  # Socket.IO open
                 logging.info("Socket.IO connection opened")
                 self.connection_time = message_time
                 await asyncio.sleep(0.1)
-                await self.websocket.send('2probe')
+                await self.websocket.send("2probe")
                 return
                 
-            if message.startswith('3'):  # Engine.IO pong
+            if message.startswith("3"):  # Engine.IO pong
                 logging.debug("Received pong")
                 return
                 
-            if message.startswith('40'):  # Socket.IO connection established
+            if message.startswith("40"):  # Socket.IO connection established
                 logging.info("Socket.IO namespace connected")
                 if hasattr(self, 'connection_time'):
                     setup_time = time.time() - self.connection_time
@@ -145,12 +159,12 @@ class MinimalWSTest:
                 await self.send_auth()
                 return
                 
-            if message.startswith('2'):  # Engine.IO ping
-                await self.websocket.send('3')  # Send pong
+            if message.startswith("2"):  # Engine.IO ping
+                await self.websocket.send("3")  # Send pong
                 logging.debug("Ping-pong completed")
                 return
                 
-            if message.startswith('42'):  # Socket.IO event
+            if message.startswith("42"):  # Socket.IO event
                 try:
                     data = json.loads(message[2:])
                     if len(data) >= 2:
@@ -321,19 +335,23 @@ class MinimalWSTest:
             if not self.session:
                 cookie_jar = aiohttp.CookieJar(unsafe=True)
                 self.session = aiohttp.ClientSession(cookie_jar=cookie_jar)
+                if not self.session:
+                    logging.error("Failed to create aiohttp session")
+                    return False
             
             # First, visit the main page to get necessary cookies
             main_url = "https://trustdice.win/crash"
             logging.info("Visiting main page...")
             
             # Initial page visit with browser-like behavior
-            async with self.session.get(main_url, headers=self.headers, allow_redirects=True) as response:
-                # Extract and store cookies from response
-                if response.cookies:
-                    for cookie in response.cookies.values():
-                        self.update_cookies({cookie.key: cookie.value})
-                        if cookie.key == 'cf_clearance':
-                            logging.info("Received Cloudflare clearance cookie")
+            if self.session:  # Type guard
+                async with self.session.get(main_url, headers=self.headers, allow_redirects=True) as response:
+                    # Extract and store cookies from response
+                    if response.cookies:
+                        for cookie in response.cookies.values():
+                            self.update_cookies({cookie.key: cookie.value})
+                            if cookie.key == 'cf_clearance':
+                                logging.info("Received Cloudflare clearance cookie")
                 
                 # Handle Cloudflare challenge if needed
                 if response.status == 403:
@@ -347,10 +365,11 @@ class MinimalWSTest:
                         'Sec-Fetch-Dest': 'document'
                     })
                     # Retry with enhanced headers
-                    async with self.session.get(main_url, headers=self.headers, allow_redirects=True) as retry_response:
-                        if retry_response.cookies: 
-                            for cookie in retry_response.cookies.values():
-                                self.update_cookies({cookie.key: cookie.value})
+                    if self.session:  # Type guard
+                        async with self.session.get(main_url, headers=self.headers, allow_redirects=True) as retry_response:
+                            if retry_response.cookies: 
+                                for cookie in retry_response.cookies.values():
+                                    self.update_cookies({cookie.key: cookie.value})
                 
                 # Wait for potential JavaScript execution
                 await asyncio.sleep(2)
@@ -376,11 +395,12 @@ class MinimalWSTest:
                 }
                 
                 logging.info("Attempting Socket.IO handshake...")
-                async with self.session.get(url, headers=socket_headers) as response:
-                    # Update cookies from handshake response
-                    if response.cookies:
-                        for cookie in response.cookies.values():
-                            self.update_cookies({cookie.key: cookie.value})
+                if self.session:  # Type guard
+                    async with self.session.get(url, headers=socket_headers) as response:
+                        # Update cookies from handshake response
+                        if response.cookies:
+                            for cookie in response.cookies.values():
+                                self.update_cookies({cookie.key: cookie.value})
                     
                     if response.status == 200:
                         data = await response.text()
@@ -396,10 +416,11 @@ class MinimalWSTest:
                             post_data = '40{"jwt":null}'
                             post_url = f"https://trustdice.win/crash/socket.io/?EIO=4&transport=polling&t={self.t}&sid={self.session_id}"
                             
-                            async with self.session.post(post_url, data=post_data, headers=socket_headers) as post_response:
-                                if post_response.cookies:
-                                    for cookie in post_response.cookies.values():
-                                        self.update_cookies({cookie.key: cookie.value})
+                            if self.session:  # Type guard
+                                async with self.session.post(post_url, data=post_data, headers=socket_headers) as post_response:
+                                    if post_response.cookies:
+                                        for cookie in post_response.cookies.values():
+                                            self.update_cookies({cookie.key: cookie.value})
                                         
                                 if post_response.status == 200:
                                     logging.info("Post-handshake request successful")
@@ -466,7 +487,8 @@ class MinimalWSTest:
                 'sec-ch-ua-platform': self.headers['sec-ch-ua-platform']
             })
             
-            self.websocket = await websockets.connect(
+            # Create new websocket connection with proper type casting
+            connection = await websockets.connect(
                 self.uri,
                 open_timeout=20,
                 close_timeout=20,
@@ -474,6 +496,8 @@ class MinimalWSTest:
                 extra_headers=[(k, v) for k, v in ws_headers.items()],
                 compression=None
             )
+            # Cast the connection to WebSocketClientProtocol and assign
+            self.websocket = cast(WebSocketClientProtocol, connection)
             
             logging.info(f"Connected to {self.uri}")
             self.connected = True

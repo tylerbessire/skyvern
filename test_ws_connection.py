@@ -1,30 +1,33 @@
 #!/usr/bin/env python3
 import asyncio
-import logging
-from ws_minimal_test import MinimalWSTest
 import json
+import logging
 import time
+from typing import Dict, List, Optional, Tuple, Union
 import websockets
+from websockets.legacy.client import WebSocketClientProtocol
+
+from ws_minimal_test import MinimalWSTest
 
 # Configure logging
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
+    format="%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
-        logging.FileHandler('ws_test_patterns.log'),
-        logging.StreamHandler()
+        logging.FileHandler("ws_test_patterns.log"),
+        logging.StreamHandler(),
     ]
 )
 
 class WSPatternAnalyzer:
-    def __init__(self):
-        self.crash_times = []
-        self.intervals = []
-        self.pre_crash_patterns = []
-        self.suspicious_sequences = []
+    def __init__(self) -> None:
+        self.crash_times: List[float] = []
+        self.intervals: List[float] = []
+        self.pre_crash_patterns: List[Tuple[float, int]] = []
+        self.suspicious_sequences: List[Tuple[float, str]] = []
         
-    def analyze_crash_pattern(self, message):
+    def analyze_crash_pattern(self, message: str) -> None:
         """Analyze crash patterns in WebSocket messages"""
         try:
             if message.startswith('42'):
@@ -71,7 +74,7 @@ class WSPatternAnalyzer:
         except Exception as e:
             logging.error(f"Error analyzing crash pattern: {str(e)}")
                             
-    def analyze_element_pattern(self):
+    def analyze_element_pattern(self) -> None:
         """Analyze patterns in element counts before crashes"""
         if len(self.pre_crash_patterns) >= 3:
             recent_patterns = self.pre_crash_patterns[-3:]
@@ -82,7 +85,7 @@ class WSPatternAnalyzer:
                 if abs(count_delta) > 50:
                     logging.warning(f"Rapid element count change detected: {count_delta} in {recent_patterns[-1][0] - recent_patterns[0][0]:.2f}s")
                     
-    def analyze_suspicious_sequence(self):
+    def analyze_suspicious_sequence(self) -> None:
         """Analyze sequences of suspicious events"""
         if len(self.suspicious_sequences) >= 3:
             recent_events = self.suspicious_sequences[-3:]
@@ -92,7 +95,7 @@ class WSPatternAnalyzer:
                 event_types = [event[1] for event in recent_events]
                 logging.warning(f"Multiple suspicious events in quick succession: {event_types}")
                 
-    def get_statistics(self):
+    def get_statistics(self) -> Dict[str, Union[int, float]]:
         """Get current pattern statistics"""
         stats = {
             "total_crashes": len(self.crash_times),
@@ -102,7 +105,7 @@ class WSPatternAnalyzer:
         }
         return stats
 
-async def main():
+async def main() -> None:
     analyzer = WSPatternAnalyzer()
     test = MinimalWSTest()
     

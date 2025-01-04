@@ -71,12 +71,11 @@ class WSTimingAnalyzer:
                             self.analyze_undefined_pattern()
         except Exception as e:
             logging.error(f"Error analyzing timing: {str(e)}")
-            
     def analyze_intervals(self) -> None:
         """Analyze patterns in crash intervals"""
         recent = self.crash_intervals[-3:]
         avg_interval = sum(recent) / 3
-        
+
         # Check for consistent intervals
         if all(abs(i - avg_interval) < 0.5 for i in recent):
             logging.warning(f"Consistent crash interval detected: {avg_interval:.2f}s")
@@ -84,19 +83,16 @@ class WSTimingAnalyzer:
         # Check for decreasing intervals
         if all(recent[i] > recent[i + 1] for i in range(len(recent) - 1)):
             logging.warning("Decreasing crash intervals detected")
-            
     def analyze_auth_pattern(self) -> None:
         """Analyze authentication error patterns"""
         recent = self.auth_timing[-2:]
         if recent[1] - recent[0] < 2.0:
             logging.warning(f"Rapid auth errors: {recent[1] - recent[0]:.2f}s apart")
-            
     def analyze_undefined_pattern(self) -> None:
         """Analyze undefined state patterns"""
         recent = self.undefined_timing[-2:]
         if recent[1] - recent[0] < 1.0:
             logging.warning(f"Rapid undefined states: {recent[1] - recent[0]:.2f}s apart")
-            
     def get_statistics(self) -> Dict[str, float]:
         """Get current timing statistics"""
         stats = {
@@ -115,18 +111,18 @@ async def test_ws_timing() -> None:
     try:
         async with websockets.connect(uri) as websocket:
             logging.info("Connected to WebSocket")
-            
+
             while True:
                 try:
                     message = await websocket.recv()
                     timestamp = time.time()
                     analyzer.analyze_timing(message, timestamp)
-                    
+
                     # Log statistics every 10 messages
                     if len(analyzer.message_times) % 10 == 0:
                         stats = analyzer.get_statistics()
                         logging.info(f"Current statistics: {stats}")
-                        
+
                 except websockets.exceptions.ConnectionClosed:
                     logging.error("WebSocket connection closed")
                     break
