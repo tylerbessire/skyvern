@@ -1,44 +1,29 @@
 #!/usr/bin/env python3
 import asyncio
-import websockets
 import json
-import time
 import logging
 import os
 import random
 import string
+import time
 from datetime import datetime
+from typing import Dict, List, Optional, Protocol, Tuple
 from urllib.parse import quote
-import websockets.exceptions
 
-# Configure detailed logging
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('websocket_test.log'),
-        logging.StreamHandler()
-    ]
-)
+import websockets
+import websockets.exceptions
+from websockets.typing import Data
 
 # Get authentication keys from environment
-WALLET_PRIVATE_KEY = os.getenv('WALLET_PRIVATE_KEY', '')
-PUBLIC_KEY = os.getenv('PUBLIC_KEY', '')
+WALLET_PRIVATE_KEY = os.getenv("WALLET_PRIVATE_KEY", "")
+PUBLIC_KEY = os.getenv("PUBLIC_KEY", "")
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('websocket_direct.log'),
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("websocket_test.log"), logging.StreamHandler()],
 )
-
-from typing import List, Dict, Optional, Any, Union, Tuple, Protocol
-import websockets
-from websockets.typing import Data
 
 class WebSocketProtocol(Protocol):
     async def send(self, message: str) -> None: ...
@@ -84,6 +69,9 @@ class CrashWebsocketTester:
         max_retries: int = 5
         retry_count: int = 0
         
+        # Default return value
+        success: bool = False
+        
         while retry_count < max_retries:
             try:
                 # Create connection with proper headers
@@ -107,7 +95,8 @@ class CrashWebsocketTester:
                     except websockets.exceptions.ConnectionClosed as e:
                         if e.code == 1000:  # Normal closure
                             logging.info("Connection closed normally")
-                            return True
+                            success = True
+                            break
                         logging.error(f"Connection closed unexpectedly: {str(e)}")
                         
                     except Exception as e:
@@ -152,7 +141,9 @@ class CrashWebsocketTester:
                 await asyncio.sleep(reconnect_delay)
             else:
                 logging.error("Max retries reached. Exiting...")
-                return False
+                success = False
+        
+        return success
 
     async def process_message(self, websocket: WebSocketProtocol, message: Data) -> None:
         try:
@@ -168,7 +159,7 @@ class CrashWebsocketTester:
 
             if isinstance(message, str) and message.startswith('2'):  # Socket.IO ping
                 logging.debug("Received ping")
-                await websocket.send('3')  # Send pong
+                await websocket.send("3")  # Send pong
                 return
 
             if isinstance(message, str) and message.startswith('3'):  # Socket.IO pong
@@ -208,15 +199,15 @@ class CrashWebsocketTester:
         """Send the authentication sequence observed in successful connections"""
         try:
             # Initial Socket.IO handshake
-            await websocket.send('40')
+            await websocket.send("40")
             await asyncio.sleep(0.1)  # Small delay between messages
             
             # Engine.IO upgrade
-            await websocket.send('2probe')
+            await websocket.send("2probe")
             await asyncio.sleep(0.1)
             
             # Confirm upgrade
-            await websocket.send('5')
+            await websocket.send("5")
             await asyncio.sleep(0.1)
             
             # Auth message with credentials
@@ -248,7 +239,7 @@ class CrashWebsocketTester:
             while True:
                 await asyncio.sleep(25)  # Socket.IO default heartbeat interval
                 try:
-                    await websocket.send('2')
+                    await websocket.send("2")
                     logging.debug("Heartbeat sent")
                 except Exception as e:
                     logging.error(f"Failed to send heartbeat: {str(e)}")

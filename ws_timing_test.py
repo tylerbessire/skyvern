@@ -1,25 +1,21 @@
 #!/usr/bin/env python3
 import asyncio
-import websockets
 import json
 import logging
 import time
 from datetime import datetime
+from typing import Dict, List, Optional, Protocol, Tuple
+
+import websockets
+from websockets.typing import Data
 
 # Configure logging
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    handlers=[
-        logging.FileHandler('ws_timing_test.log'),
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[logging.FileHandler("ws_timing_test.log"), logging.StreamHandler()],
 )
-
-from typing import List, Tuple, Dict, Optional, Any, Union, Protocol
-import websockets
-from websockets.typing import Data
 
 class WebSocketProtocol(Protocol):
     async def send(self, message: str) -> None: ...
