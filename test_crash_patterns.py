@@ -409,16 +409,16 @@ class CrashPatternTest:
                             try:
                                 count = int(str(event_data).split('elements":')[1].split(',')[0])
                                 self.analyze_element_pattern(count)
-                            except:
-                                pass
+                            except (ValueError, IndexError):
+                                logging.warning("Failed to parse element count")
                         
                         # Extract and analyze bodyText
                         if 'bodyText' in str(event_data):
                             try:
                                 value = int(str(event_data).split('bodyText":')[1].split(',')[0])
                                 self.analyze_bodytext_pattern(value)
-                            except:
-                                pass
+                            except (ValueError, IndexError):
+                                logging.warning("Failed to parse bodyText value")
                     
                     
                     elif event_name == "crash":
@@ -544,8 +544,8 @@ class CrashPatternTest:
                 if self.websocket:
                     try:
                         await self.websocket.close()
-                    except:
-                        pass
+                    except Exception as e:
+                        logging.error(f"Error closing websocket: {str(e)}")
                     self.websocket = None
                     
             retry_count += 1

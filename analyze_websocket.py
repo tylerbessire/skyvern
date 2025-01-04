@@ -6,7 +6,8 @@ import re
 import subprocess
 import os
 
-def analyze_websocket_patterns():
+def analyze_websocket_patterns() -> None:
+    """Analyze WebSocket patterns in crash data and console logs."""
     # Read crash data
     df = pd.read_csv("crash_data.csv")
     df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -40,7 +41,7 @@ def analyze_websocket_patterns():
                     timestamp_str = timestamp_match.group(1)
                     try:
                         timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
-                    except:
+                    except ValueError:
                         timestamp = current_time
                 else:
                     timestamp = current_time

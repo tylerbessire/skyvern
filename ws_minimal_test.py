@@ -177,8 +177,8 @@ class MinimalWSTest:
                                     count = int(str(event_data).split('elements":')[1].split(',')[0])
                                     self.element_counts.append((time.time(), count))
                                     self.analyze_element_pattern()
-                                except:
-                                    pass
+                                except (ValueError, IndexError):
+                                    logging.warning("Failed to parse element count")
                             
                             # Track bodyText values
                             if 'bodyText' in str(event_data):
@@ -186,8 +186,8 @@ class MinimalWSTest:
                                     value = int(str(event_data).split('bodyText":')[1].split(',')[0])
                                     self.bodytext_values.append((time.time(), value))
                                     self.analyze_bodytext_pattern()
-                                except:
-                                    pass
+                                except (ValueError, IndexError):
+                                    logging.warning("Failed to parse bodyText value")
                         
                         # Enhanced undefined state tracking
                         if "undefined" in str(event_data):
@@ -230,8 +230,8 @@ class MinimalWSTest:
                 
         # Check for error sequence pattern
         if self.last_401_time and len(self.undefined_sequence) > 0:
-            last_undefined = self.undefined_sequence[-1]
-            if 0 < (current_time - self.last_401_time) < 5.0:
+            if (self.undefined_sequence and 
+                0 < (current_time - self.last_401_time) < 5.0):
                 logging.warning("Potential crash pattern: 401 error followed by undefined state")
                 
     def analyze_element_pattern(self):
