@@ -10,12 +10,12 @@ logging.basicConfig(level=logging.INFO)
 
 def analyze_timing_patterns(timing_file):
     """Analyze timing patterns from collected WebSocket data"""
-    with open(timing_file, 'r') as f:
+    with open(timing_file, "r") as f:
         data = json.load(f)
     
-    crash_intervals = data['crash_intervals']
-    auth_timing = data['auth_timing']
-    undefined_timing = data['undefined_timing']
+    crash_intervals = data["crash_intervals"]
+    auth_timing = data["auth_timing"]
+    undefined_timing = data["undefined_timing"]
     
     # Analyze crash intervals
     if crash_intervals:

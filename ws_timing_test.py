@@ -30,7 +30,7 @@ class WSTimingAnalyzer:
     def analyze_timing(self, message, timestamp):
         """Analyze timing patterns in WebSocket messages"""
         try:
-            if message.startswith('42'):
+            if message.startswith("42"):
                 data = json.loads(message[2:])
                 if len(data) >= 2:
                     event_name = data[0]
@@ -131,13 +131,17 @@ async def test_ws_timing():
         logging.error(f"Connection error: {str(e)}")
     finally:
         # Save analysis results
-        with open('timing_analysis.json', 'w') as f:
-            json.dump({
-                "crash_intervals": analyzer.crash_intervals,
-                "auth_timing": analyzer.auth_timing,
-                "undefined_timing": analyzer.undefined_timing,
-                "statistics": analyzer.get_statistics()
-            }, f, indent=2)
+        with open("timing_analysis.json", "w") as f:
+            json.dump(
+                {
+                    "crash_intervals": analyzer.crash_intervals,
+                    "auth_timing": analyzer.auth_timing,
+                    "undefined_timing": analyzer.undefined_timing,
+                    "statistics": analyzer.get_statistics()
+                },
+                f,
+                indent=2
+            )
 
 if __name__ == "__main__":
     asyncio.run(test_ws_timing())

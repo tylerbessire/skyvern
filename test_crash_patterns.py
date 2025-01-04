@@ -32,8 +32,8 @@ class CrashPatternTest:
     def __init__(self):
         self.t = str(int(time.time() * 1000))
         self.uri = f"wss://trustdice.win/crash/socket.io/?EIO=4&transport=websocket&t={self.t}"
-        self.wallet_key = os.getenv('WALLET_PRIVATE_KEY')
-        self.public_key = os.getenv('PUBLIC_KEY')
+        self.wallet_key = os.getenv("WALLET_PRIVATE_KEY")
+        self.public_key = os.getenv("PUBLIC_KEY")
         
         # Connection state
         self.session_id = None
@@ -43,25 +43,25 @@ class CrashPatternTest:
         self.session = None
         self.last_ping = None
         self.ping_interval = 25000
-        
+
         # Headers for browser simulation
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Origin': 'https://trustdice.win',
-            'Connection': 'keep-alive',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'Pragma': 'no-cache',
-            'Cache-Control': 'no-cache',
-            'Upgrade-Insecure-Requests': '1'
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Origin": "https://trustdice.win",
+            "Connection": "keep-alive",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "sec-ch-ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "Pragma": "no-cache",
+            "Cache-Control": "no-cache",
+            "Upgrade-Insecure-Requests": "1"
         }
         
         # Pattern tracking
@@ -70,12 +70,12 @@ class CrashPatternTest:
         self.crash_times = deque(maxlen=10)
         self.undefined_sequence = deque(maxlen=5)
         self.auth_errors = deque(maxlen=5)
-        
+
         # Prediction tracking
         self.predicted_crashes = []
         self.actual_crashes = []
         self.prediction_accuracy = []
-        
+
         # Initialize cookies with credentials
         self.update_cookies({
             'wallet_private_key': self.wallet_key,
@@ -118,13 +118,15 @@ class CrashPatternTest:
                 if response.status == 403:
                     logging.warning("Initial visit blocked by Cloudflare, attempting with enhanced headers...")
                     # Add more browser-like headers
-                    self.headers.update({
-                        'DNT': '1',
-                        'Sec-Fetch-Site': 'same-origin',
-                        'Sec-Fetch-Mode': 'navigate',
-                        'Sec-Fetch-User': '?1',
-                        'Sec-Fetch-Dest': 'document'
-                    })
+                    self.headers.update(
+                        {
+                            "DNT": "1",
+                            "Sec-Fetch-Site": "same-origin",
+                            "Sec-Fetch-Mode": "navigate",
+                            "Sec-Fetch-User": "?1",
+                            "Sec-Fetch-Dest": "document"
+                        }
+                    )
                     # Retry with enhanced headers
                     async with self.session.get(main_url, headers=self.headers, allow_redirects=True) as retry_response:
                         if retry_response.cookies: 
@@ -136,22 +138,22 @@ class CrashPatternTest:
                 
                 # Now attempt Socket.IO handshake with proper headers
                 params = {
-                    'EIO': '4',
-                    'transport': 'polling',
-                    't': self.t
+                    "EIO": "4",
+                    "transport": "polling",
+                    "t": self.t
                 }
                 url = f"https://trustdice.win/crash/socket.io/?{urlencode(params)}"
                 
                 # Enhanced headers for Socket.IO request
                 socket_headers = {
                     **self.headers,
-                    'Referer': 'https://trustdice.win/crash',
-                    'Sec-Fetch-Dest': 'empty',
-                    'Sec-Fetch-Mode': 'cors',
-                    'Sec-Fetch-Site': 'same-origin',
-                    'Accept': '*/*',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    "Referer": "https://trustdice.win/crash",
+                    "Sec-Fetch-Dest": "empty",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Site": "same-origin",
+                    "Accept": "*/*",
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest"
                 }
                 
                 logging.info("Attempting Socket.IO handshake...")
