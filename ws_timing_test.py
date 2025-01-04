@@ -31,7 +31,7 @@ class WSTimingAnalyzer:
         self.undefined_timing: List[float] = []
         self.last_crash: Optional[float] = None
         self.crash_intervals: List[float] = []
-        
+
     def analyze_timing(self, message: Data, timestamp: float) -> None:
         """Analyze timing patterns in WebSocket messages"""
         try:
@@ -53,7 +53,7 @@ class WSTimingAnalyzer:
                                 self.analyze_intervals()
                         self.last_crash = timestamp
                         self.crash_times.append(timestamp)
-                        
+
                         # Store pre-crash messages
                         recent_messages = self.message_times[-5:]  # Last 5 messages
                         self.pre_crash_messages.append(recent_messages)
@@ -69,7 +69,6 @@ class WSTimingAnalyzer:
                         self.undefined_timing.append(timestamp)
                         if len(self.undefined_timing) >= 2:
                             self.analyze_undefined_pattern()
-                            
         except Exception as e:
             logging.error(f"Error analyzing timing: {str(e)}")
             
@@ -128,10 +127,9 @@ async def test_ws_timing() -> None:
                         stats = analyzer.get_statistics()
                         logging.info(f"Current statistics: {stats}")
                         
-                except websockets.exceptions.ConnectionClosed: 
+                except websockets.exceptions.ConnectionClosed:
                     logging.error("WebSocket connection closed")
                     break
-                    
     except Exception as e:
         logging.error(f"Connection error: {str(e)}")
     finally:
@@ -142,10 +140,10 @@ async def test_ws_timing() -> None:
                     "crash_intervals": analyzer.crash_intervals,
                     "auth_timing": analyzer.auth_timing,
                     "undefined_timing": analyzer.undefined_timing,
-                    "statistics": analyzer.get_statistics()
+                    "statistics": analyzer.get_statistics(),
                 },
                 f,
-                indent=2
+                indent=2,
             )
 
 if __name__ == "__main__":

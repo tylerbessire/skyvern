@@ -7,7 +7,7 @@ import random
 import string
 import time
 from datetime import datetime
-from typing import Dict, List, Optional, Protocol, Tuple
+from typing import Any, Dict, List, Optional, Protocol, Tuple
 from urllib.parse import quote
 
 import websockets
@@ -33,17 +33,17 @@ class WebSocketProtocol(Protocol):
 class CrashWebsocketTester:
     def __init__(self) -> None:
         # Generate required Socket.IO parameters
-        self.sid: str = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
+        self.sid: str = "".join(random.choices(string.ascii_letters + string.digits, k=20))
         self.t: str = str(int(time.time() * 1000))
-        
+
         # Use proper Socket.IO v4 connection URL format
         query_params: Dict[str, str] = {
-            'EIO': '4',
-            'transport': 'websocket',
-            't': self.t,
-            'sid': self.sid
+            "EIO": "4",
+            "transport": "websocket",
+            "t": self.t,
+            "sid": self.sid,
         }
-        query_string: str = '&'.join(f'{k}={v}' for k, v in query_params.items())
+        query_string: str = "&".join(f"{k}={v}" for k, v in query_params.items())
         self.uri: str = f"wss://trustdice.win/crash/socket.io/?{query_string}"
         
         # Connection state
@@ -54,11 +54,11 @@ class CrashWebsocketTester:
         
         # Authentication headers
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Origin': 'https://trustdice.win',
-            'Sec-WebSocket-Extensions': 'permessage-deflate; client_max_window_bits',
-            'Sec-WebSocket-Version': '13',
-            'Cookie': f'wallet_private_key={quote(WALLET_PRIVATE_KEY)}; public_key={quote(PUBLIC_KEY)}'
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Origin": "https://trustdice.win",
+            "Sec-WebSocket-Extensions": "permessage-deflate; client_max_window_bits",
+            "Sec-WebSocket-Version": "13",
+            "Cookie": f"wallet_private_key={quote(WALLET_PRIVATE_KEY)}; public_key={quote(PUBLIC_KEY)}",
         }
         
         # Log initialization
@@ -79,7 +79,7 @@ class CrashWebsocketTester:
                 async with websockets.connect(
                     self.uri,
                     additional_headers={
-                        'Cookie': self.headers['Cookie']
+                        "Cookie": self.headers["Cookie"]
                     },
                     compression=None,
                     max_size=2**23
@@ -101,7 +101,7 @@ class CrashWebsocketTester:
                         
                     except Exception as e:
                         logging.error(f"Error during message processing: {str(e)}")
-                        if 'undefined' in str(e):
+                        if "undefined" in str(e):
                             logging.warning("Undefined state detected in error")
                         
             except websockets.exceptions.WebSocketException as e:
@@ -116,15 +116,15 @@ class CrashWebsocketTester:
                 elif "401" in error_msg:
                     logging.warning("Unauthorized. This could indicate a pattern...")
                     self.state_transitions.append({
-                        'time': time.time(),
-                        'type': 'auth_error_401',
-                        'data': error_msg
+                        "time": time.time(),
+                        "type": "auth_error_401",
+                        "data": error_msg
                     })
                     # Track timing of auth errors for pattern analysis
                     if len(self.state_transitions) >= 2:
-                        last_two = [x for x in self.state_transitions[-2:] if x['type'] == 'auth_error_401']
+                        last_two = [x for x in self.state_transitions[-2:] if x["type"] == "auth_error_401"]
                         if len(last_two) == 2:
-                            time_diff = last_two[1]['time'] - last_two[0]['time']
+                            time_diff = last_two[1]["time"] - last_two[0]["time"]
                             if time_diff < 5.0:
                                 logging.warning(f"Rapid auth errors detected ({time_diff:.2f}s apart)")
                     
@@ -148,46 +148,46 @@ class CrashWebsocketTester:
     async def process_message(self, websocket: WebSocketProtocol, message: Data) -> None:
         try:
             # Handle different Socket.IO message types
-            if isinstance(message, str) and message.startswith('0'):  # Socket.IO open
+            if isinstance(message, str) and message.startswith("0"):  # Socket.IO open
                 logging.info("Socket.IO connection opened")
                 return
                 
-            if isinstance(message, str) and message.startswith('40'):  # Socket.IO connection
+            if isinstance(message, str) and message.startswith("40"):  # Socket.IO connection
                 logging.info("Socket.IO namespace connected")
                 await self.send_auth_sequence(websocket)
                 return
 
-            if isinstance(message, str) and message.startswith('2'):  # Socket.IO ping
+            if isinstance(message, str) and message.startswith("2"):  # Socket.IO ping
                 logging.debug("Received ping")
                 await websocket.send("3")  # Send pong
                 return
 
-            if isinstance(message, str) and message.startswith('3'):  # Socket.IO pong
+            if isinstance(message, str) and message.startswith("3"):  # Socket.IO pong
                 logging.debug("Received pong")
                 return
 
             # Try to parse as JSON if it's a data message
             try:
-                if isinstance(message, str) and message.startswith('42'):  # Socket.IO event
+                if isinstance(message, str) and message.startswith("42"):  # Socket.IO event
                     data = json.loads(message[2:])
                     await self.handle_game_data(data)
                     
                     # Track undefined states
-                    if 'undefined' in str(data):
+                    if "undefined" in str(data):
                         logging.warning("Undefined state detected")
                         self.state_transitions.append({
-                            'time': time.time(),
-                            'type': 'undefined_state',
-                            'data': data
+                            "time": time.time(),
+                            "type": "undefined_state",
+                            "data": data
                         })
                         
             except json.JSONDecodeError:
-                if isinstance(message, str) and ('401' in message or 'unauthorized' in message.lower()):
+                if isinstance(message, str) and ("401" in message or "unauthorized" in message.lower()):
                     logging.warning("Authentication error detected")
                     self.state_transitions.append({
-                        'time': time.time(),
-                        'type': 'auth_error',
-                        'data': message
+                        "time": time.time(),
+                        "type": "auth_error",
+                        "data": message
                     })
                 else:
                     logging.warning(f"Failed to decode JSON: {message}")
@@ -216,14 +216,14 @@ class CrashWebsocketTester:
                 "publicKey": PUBLIC_KEY,
                 "timestamp": str(int(time.time() * 1000))
             }
-            await websocket.send('42' + json.dumps(["auth", auth_data]))
+            await websocket.send("42" + json.dumps(["auth", auth_data]))
             await asyncio.sleep(0.2)
             
             # Subscribe to crash game events
-            await websocket.send('42' + json.dumps(["subscribe", "crash"]))
+            await websocket.send("42" + json.dumps(["subscribe", "crash"]))
             
             # Send heartbeat
-            await websocket.send('2')
+            await websocket.send("2")
             
             logging.info("Full authentication sequence sent")
             
