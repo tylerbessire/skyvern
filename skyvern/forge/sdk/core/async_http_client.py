@@ -17,7 +17,9 @@ class AsyncHttpClient:
     async def get(self, url: str) -> httpx.Response:
         return await self.client.get(url)
 
-    async def post(self, url: str, data: dict[Any, Any] | None = None) -> httpx.Response:
+    async def post(
+        self, url: str, data: dict[Any, Any] | None = None
+    ) -> httpx.Response:
         return await self.client.post(url, data=data)
 
     async def close(self) -> None:

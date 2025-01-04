@@ -28,7 +28,11 @@ async def download_file(url: str, max_size_mb: int | None = None) -> str:
             LOG.info("Starting to download file")
             async with session.get(url) as response:
                 # Check the content length if available
-                if max_size_mb and response.content_length and response.content_length > max_size_mb * 1024 * 1024:
+                if (
+                    max_size_mb
+                    and response.content_length
+                    and response.content_length > max_size_mb * 1024 * 1024
+                ):
                     # todo: move to root exception.py
                     raise DownloadFileMaxSizeExceeded(max_size_mb)
 
@@ -48,7 +52,10 @@ async def download_file(url: str, max_size_mb: int | None = None) -> str:
                     async for chunk in response.content.iter_chunked(1024):
                         f.write(chunk)
                         total_bytes_downloaded += len(chunk)
-                        if max_size_mb and total_bytes_downloaded > max_size_mb * 1024 * 1024:
+                        if (
+                            max_size_mb
+                            and total_bytes_downloaded > max_size_mb * 1024 * 1024
+                        ):
                             raise DownloadFileMaxSizeExceeded(max_size_mb)
 
                 LOG.info(f"File downloaded successfully to {file_path}")
@@ -69,7 +76,9 @@ def zip_files(files_path: str, zip_file_path: str) -> str:
         for root, dirs, files in os.walk(files_path):
             for file in files:
                 file_path = os.path.join(root, file)
-                arcname = os.path.relpath(file_path, files_path)  # Relative path within the zip
+                arcname = os.path.relpath(
+                    file_path, files_path
+                )  # Relative path within the zip
                 zipf.write(file_path, arcname)
 
     return zip_file_path

@@ -7,7 +7,9 @@ from skyvern.forge.sdk.cache.base import CACHE_EXPIRE_TIME, MAX_CACHE_ITEM, Base
 
 class LocalCache(BaseCache):
     def __init__(self) -> None:
-        self.cache: TTLCache = TTLCache(maxsize=MAX_CACHE_ITEM, ttl=CACHE_EXPIRE_TIME.total_seconds())
+        self.cache: TTLCache = TTLCache(
+            maxsize=MAX_CACHE_ITEM, ttl=CACHE_EXPIRE_TIME.total_seconds()
+        )
 
     async def get(self, key: str) -> Any:
         if key not in self.cache:

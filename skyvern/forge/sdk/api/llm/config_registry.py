@@ -76,7 +76,13 @@ if SettingsManager.get_settings().ENABLE_OPENAI:
         ),
     )
     LLMConfigRegistry.register_config(
-        "OPENAI_GPT4O", LLMConfig("gpt-4o", ["OPENAI_API_KEY"], supports_vision=True, add_assistant_prefix=False)
+        "OPENAI_GPT4O",
+        LLMConfig(
+            "gpt-4o",
+            ["OPENAI_API_KEY"],
+            supports_vision=True,
+            add_assistant_prefix=False,
+        ),
     )
     LLMConfigRegistry.register_config(
         "OPENAI_GPT4O_MINI",
@@ -89,7 +95,12 @@ if SettingsManager.get_settings().ENABLE_OPENAI:
     )
     LLMConfigRegistry.register_config(
         "OPENAI_GPT-4O-2024-08-06",
-        LLMConfig("gpt-4o-2024-08-06", ["OPENAI_API_KEY"], supports_vision=True, add_assistant_prefix=False),
+        LLMConfig(
+            "gpt-4o-2024-08-06",
+            ["OPENAI_API_KEY"],
+            supports_vision=True,
+            add_assistant_prefix=False,
+        ),
     )
 
 

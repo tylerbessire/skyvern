@@ -48,11 +48,22 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("totp_code_id"),
     )
-    op.create_index(op.f("ix_totp_codes_created_at"), "totp_codes", ["created_at"], unique=False)
-    op.create_index(op.f("ix_totp_codes_expired_at"), "totp_codes", ["expired_at"], unique=False)
-    op.create_index(op.f("ix_totp_codes_totp_identifier"), "totp_codes", ["totp_identifier"], unique=False)
+    op.create_index(
+        op.f("ix_totp_codes_created_at"), "totp_codes", ["created_at"], unique=False
+    )
+    op.create_index(
+        op.f("ix_totp_codes_expired_at"), "totp_codes", ["expired_at"], unique=False
+    )
+    op.create_index(
+        op.f("ix_totp_codes_totp_identifier"),
+        "totp_codes",
+        ["totp_identifier"],
+        unique=False,
+    )
     op.add_column("tasks", sa.Column("totp_identifier", sa.String(), nullable=True))
-    op.add_column("workflow_runs", sa.Column("totp_identifier", sa.String(), nullable=True))
+    op.add_column(
+        "workflow_runs", sa.Column("totp_identifier", sa.String(), nullable=True)
+    )
     op.add_column("workflows", sa.Column("totp_identifier", sa.String(), nullable=True))
     # ### end Alembic commands ###
 

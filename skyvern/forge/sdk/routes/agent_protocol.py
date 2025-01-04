@@ -187,7 +187,9 @@ async def execute_agent_task_step(
     current_org: Organization = Depends(org_auth_service.get_current_org),
 ) -> Response:
     analytics.capture("skyvern-oss-agent-task-step-execute")
-    task = await app.DATABASE.get_task(task_id, organization_id=current_org.organization_id)
+    task = await app.DATABASE.get_task(
+        task_id, organization_id=current_org.organization_id
+    )
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -195,7 +197,9 @@ async def execute_agent_task_step(
         )
     # An empty step request means that the agent should execute the next step for the task.
     if not step_id:
-        step = await app.DATABASE.get_latest_step(task_id=task_id, organization_id=current_org.organization_id)
+        step = await app.DATABASE.get_latest_step(
+            task_id=task_id, organization_id=current_org.organization_id
+        )
         if not step:
             raise StepNotFound(current_org.organization_id, task_id)
         LOG.info(
@@ -215,7 +219,9 @@ async def execute_agent_task_step(
                 detail=f"No steps found for task {task_id}",
             )
     else:
-        step = await app.DATABASE.get_step(task_id, step_id, organization_id=current_org.organization_id)
+        step = await app.DATABASE.get_step(
+            task_id, step_id, organization_id=current_org.organization_id
+        )
         if not step:
             raise StepNotFound(current_org.organization_id, task_id, step_id)
         LOG.info(
@@ -239,13 +245,17 @@ async def execute_agent_task_step(
 
 
 @base_router.get("/tasks/{task_id}", response_model=TaskResponse)
-@base_router.get("/tasks/{task_id}/", response_model=TaskResponse, include_in_schema=False)
+@base_router.get(
+    "/tasks/{task_id}/", response_model=TaskResponse, include_in_schema=False
+)
 async def get_task(
     task_id: str,
     current_org: Organization = Depends(org_auth_service.get_current_org),
 ) -> TaskResponse:
     analytics.capture("skyvern-oss-agent-task-get")
-    task_obj = await app.DATABASE.get_task(task_id, organization_id=current_org.organization_id)
+    task_obj = await app.DATABASE.get_task(
+        task_id, organization_id=current_org.organization_id
+    )
     if not task_obj:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -253,7 +263,9 @@ async def get_task(
         )
 
     # get latest step
-    latest_step = await app.DATABASE.get_latest_step(task_id, organization_id=current_org.organization_id)
+    latest_step = await app.DATABASE.get_latest_step(
+        task_id, organization_id=current_org.organization_id
+    )
     if not latest_step:
         return task_obj.to_task_response()
 
@@ -286,7 +298,9 @@ async def get_task(
     )
     latest_action_screenshot_urls: list[str] | None = None
     if latest_action_screenshot_artifacts:
-        latest_action_screenshot_urls = await app.ARTIFACT_MANAGER.get_share_links(latest_action_screenshot_artifacts)
+        latest_action_screenshot_urls = await app.ARTIFACT_MANAGER.get_share_links(
+            latest_action_screenshot_artifacts
+        )
     elif task_obj.status in [TaskStatus.terminated, TaskStatus.completed]:
         LOG.error(
             "Failed to get latest action screenshots in task response",
@@ -295,11 +309,16 @@ async def get_task(
         )
 
     failure_reason: str | None = None
-    if task_obj.status == TaskStatus.failed and (latest_step.output or task_obj.failure_reason):
+    if task_obj.status == TaskStatus.failed and (
+        latest_step.output or task_obj.failure_reason
+    ):
         failure_reason = ""
         if task_obj.failure_reason:
             failure_reason += task_obj.failure_reason or ""
-        if latest_step.output is not None and latest_step.output.actions_and_results is not None:
+        if (
+            latest_step.output is not None
+            and latest_step.output.actions_and_results is not None
+        ):
             action_results_string: list[str] = []
             for action, results in latest_step.output.actions_and_results:
                 if len(results) == 0:
@@ -326,7 +345,9 @@ async def cancel_task(
     current_org: Organization = Depends(org_auth_service.get_current_org),
 ) -> None:
     analytics.capture("skyvern-oss-agent-task-get")
-    task_obj = await app.DATABASE.get_task(task_id, organization_id=current_org.organization_id)
+    task_obj = await app.DATABASE.get_task(
+        task_id, organization_id=current_org.organization_id
+    )
     if not task_obj:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -352,7 +373,9 @@ async def retry_webhook(
     x_api_key: Annotated[str | None, Header()] = None,
 ) -> TaskResponse:
     analytics.capture("skyvern-oss-agent-task-retry-webhook")
-    task_obj = await app.DATABASE.get_task(task_id, organization_id=current_org.organization_id)
+    task_obj = await app.DATABASE.get_task(
+        task_id, organization_id=current_org.organization_id
+    )
     if not task_obj:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -360,18 +383,24 @@ async def retry_webhook(
         )
 
     # get latest step
-    latest_step = await app.DATABASE.get_latest_step(task_id, organization_id=current_org.organization_id)
+    latest_step = await app.DATABASE.get_latest_step(
+        task_id, organization_id=current_org.organization_id
+    )
     if not latest_step:
         return task_obj.to_task_response()
 
     # retry the webhook
-    await app.agent.execute_task_webhook(task=task_obj, last_step=latest_step, api_key=x_api_key)
+    await app.agent.execute_task_webhook(
+        task=task_obj, last_step=latest_step, api_key=x_api_key
+    )
 
     return task_obj.to_task_response()
 
 
 @base_router.get("/internal/tasks/{task_id}", response_model=list[Task])
-@base_router.get("/internal/tasks/{task_id}/", response_model=list[Task], include_in_schema=False)
+@base_router.get(
+    "/internal/tasks/{task_id}/", response_model=list[Task], include_in_schema=False
+)
 async def get_task_internal(
     task_id: str,
     current_org: Organization = Depends(org_auth_service.get_current_org),
@@ -384,7 +413,9 @@ async def get_task_internal(
         get_agent_task endpoint.
     """
     analytics.capture("skyvern-oss-agent-task-get-internal")
-    task = await app.DATABASE.get_task(task_id, organization_id=current_org.organization_id)
+    task = await app.DATABASE.get_task(
+        task_id, organization_id=current_org.organization_id
+    )
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -394,7 +425,9 @@ async def get_task_internal(
 
 
 @base_router.get("/tasks", tags=["agent"], response_model=list[Task])
-@base_router.get("/tasks/", tags=["agent"], response_model=list[Task], include_in_schema=False)
+@base_router.get(
+    "/tasks/", tags=["agent"], response_model=list[Task], include_in_schema=False
+)
 async def get_agent_tasks(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1),
@@ -457,7 +490,10 @@ async def get_agent_tasks_internal(
     """
     analytics.capture("skyvern-oss-agent-tasks-get-internal")
     tasks = await app.DATABASE.get_tasks(
-        page, page_size, workflow_run_id=None, organization_id=current_org.organization_id
+        page,
+        page_size,
+        workflow_run_id=None,
+        organization_id=current_org.organization_id,
     )
     return ORJSONResponse([task.model_dump() for task in tasks])
 
@@ -479,7 +515,9 @@ async def get_agent_task_steps(
     :return: List of steps for a task with pagination.
     """
     analytics.capture("skyvern-oss-agent-task-steps-get")
-    steps = await app.DATABASE.get_task_steps(task_id, organization_id=current_org.organization_id)
+    steps = await app.DATABASE.get_task_steps(
+        task_id, organization_id=current_org.organization_id
+    )
     return ORJSONResponse([step.model_dump(exclude_none=True) for step in steps])
 
 
@@ -511,7 +549,10 @@ async def get_agent_task_step_artifacts(
         step_id,
         organization_id=current_org.organization_id,
     )
-    if SettingsManager.get_settings().ENV != "local" or SettingsManager.get_settings().GENERATE_PRESIGNED_URLS:
+    if (
+        SettingsManager.get_settings().ENV != "local"
+        or SettingsManager.get_settings().GENERATE_PRESIGNED_URLS
+    ):
         signed_urls = await app.ARTIFACT_MANAGER.get_share_links(artifacts)
         if signed_urls:
             for i, artifact in enumerate(artifacts):
@@ -543,7 +584,9 @@ async def get_task_actions(
     current_org: Organization = Depends(org_auth_service.get_current_org),
 ) -> list[Action]:
     analytics.capture("skyvern-oss-agent-task-actions-get")
-    actions = await app.DATABASE.get_task_actions(task_id, organization_id=current_org.organization_id)
+    actions = await app.DATABASE.get_task_actions(
+        task_id, organization_id=current_org.organization_id
+    )
     return actions
 
 
@@ -575,7 +618,9 @@ async def execute_workflow(
         max_steps_override=x_max_steps_override,
     )
     if x_max_steps_override:
-        LOG.info("Overriding max steps per run", max_steps_override=x_max_steps_override)
+        LOG.info(
+            "Overriding max steps per run", max_steps_override=x_max_steps_override
+        )
     await AsyncExecutorFactory.get_executor().execute_workflow(
         request=request,
         background_tasks=background_tasks,
@@ -683,7 +728,11 @@ async def get_workflow_run_by_run_id(
     "/workflows",
     openapi_extra={
         "requestBody": {
-            "content": {"application/x-yaml": {"schema": WorkflowCreateYAMLRequest.model_json_schema()}},
+            "content": {
+                "application/x-yaml": {
+                    "schema": WorkflowCreateYAMLRequest.model_json_schema()
+                }
+            },
             "required": True,
         },
     },
@@ -693,7 +742,11 @@ async def get_workflow_run_by_run_id(
     "/workflows/",
     openapi_extra={
         "requestBody": {
-            "content": {"application/x-yaml": {"schema": WorkflowCreateYAMLRequest.model_json_schema()}},
+            "content": {
+                "application/x-yaml": {
+                    "schema": WorkflowCreateYAMLRequest.model_json_schema()
+                }
+            },
             "required": True,
         },
     },
@@ -712,14 +765,20 @@ async def create_workflow(
         raise HTTPException(status_code=422, detail="Invalid YAML")
 
     try:
-        workflow_create_request = WorkflowCreateYAMLRequest.model_validate(workflow_yaml)
+        workflow_create_request = WorkflowCreateYAMLRequest.model_validate(
+            workflow_yaml
+        )
         return await app.WORKFLOW_SERVICE.create_workflow_from_request(
             organization=current_org, request=workflow_create_request
         )
     except WorkflowParameterMissingRequiredValue as e:
         raise e
     except Exception as e:
-        LOG.error("Failed to create workflow", exc_info=True, organization_id=current_org.organization_id)
+        LOG.error(
+            "Failed to create workflow",
+            exc_info=True,
+            organization_id=current_org.organization_id,
+        )
         raise FailedToCreateWorkflow(str(e))
 
 
@@ -727,7 +786,11 @@ async def create_workflow(
     "/workflows/{workflow_permanent_id}",
     openapi_extra={
         "requestBody": {
-            "content": {"application/x-yaml": {"schema": WorkflowCreateYAMLRequest.model_json_schema()}},
+            "content": {
+                "application/x-yaml": {
+                    "schema": WorkflowCreateYAMLRequest.model_json_schema()
+                }
+            },
             "required": True,
         },
     },
@@ -737,7 +800,11 @@ async def create_workflow(
     "/workflows/{workflow_permanent_id}/",
     openapi_extra={
         "requestBody": {
-            "content": {"application/x-yaml": {"schema": WorkflowCreateYAMLRequest.model_json_schema()}},
+            "content": {
+                "application/x-yaml": {
+                    "schema": WorkflowCreateYAMLRequest.model_json_schema()
+                }
+            },
             "required": True,
         },
     },
@@ -758,7 +825,9 @@ async def update_workflow(
         raise HTTPException(status_code=422, detail="Invalid YAML")
 
     try:
-        workflow_create_request = WorkflowCreateYAMLRequest.model_validate(workflow_yaml)
+        workflow_create_request = WorkflowCreateYAMLRequest.model_validate(
+            workflow_yaml
+        )
         return await app.WORKFLOW_SERVICE.create_workflow_from_request(
             organization=current_org,
             request=workflow_create_request,
@@ -772,7 +841,9 @@ async def update_workflow(
             workflow_permanent_id=workflow_permanent_id,
             organization_id=current_org.organization_id,
         )
-        raise FailedToUpdateWorkflow(workflow_permanent_id, f"<{type(e).__name__}: {str(e)}>")
+        raise FailedToUpdateWorkflow(
+            workflow_permanent_id, f"<{type(e).__name__}: {str(e)}>"
+        )
 
 
 @base_router.delete("/workflows/{workflow_permanent_id}")
@@ -782,7 +853,9 @@ async def delete_workflow(
     current_org: Organization = Depends(org_auth_service.get_current_org),
 ) -> None:
     analytics.capture("skyvern-oss-agent-workflow-delete")
-    await app.WORKFLOW_SERVICE.delete_workflow_by_permanent_id(workflow_permanent_id, current_org.organization_id)
+    await app.WORKFLOW_SERVICE.delete_workflow_by_permanent_id(
+        workflow_permanent_id, current_org.organization_id
+    )
 
 
 @base_router.get("/workflows", response_model=list[Workflow])
@@ -842,7 +915,8 @@ async def generate_task(
     # check if there's a same user_prompt within the past x Hours
     # in the future, we can use vector db to fetch similar prompts
     existing_task_generation = await app.DATABASE.get_task_generation_by_prompt_hash(
-        user_prompt_hash=user_prompt_hash, query_window_hours=SettingsManager.get_settings().PROMPT_CACHE_WINDOW_HOURS
+        user_prompt_hash=user_prompt_hash,
+        query_window_hours=SettingsManager.get_settings().PROMPT_CACHE_WINDOW_HOURS,
     )
     if existing_task_generation:
         new_task_generation = await app.DATABASE.create_task_generation(
@@ -884,10 +958,18 @@ async def generate_task(
         return task_generation
     except LLMProviderError:
         LOG.error("Failed to generate task", exc_info=True)
-        raise HTTPException(status_code=400, detail="Failed to generate task. Please try again later.")
+        raise HTTPException(
+            status_code=400, detail="Failed to generate task. Please try again later."
+        )
     except OperationalError:
-        LOG.error("Database error when generating task", exc_info=True, user_prompt=data.prompt)
-        raise HTTPException(status_code=500, detail="Failed to generate task. Please try again later.")
+        LOG.error(
+            "Database error when generating task",
+            exc_info=True,
+            user_prompt=data.prompt,
+        )
+        raise HTTPException(
+            status_code=500, detail="Failed to generate task. Please try again later."
+        )
 
 
 @base_router.put("/organizations/", include_in_schema=False)
@@ -917,9 +999,14 @@ async def get_org_api_keys(
     current_org: Organization = Depends(org_auth_service.get_current_org),
 ) -> GetOrganizationAPIKeysResponse:
     if organization_id != current_org.organization_id:
-        raise HTTPException(status_code=403, detail="You do not have permission to access this organization")
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have permission to access this organization",
+        )
     api_keys = []
-    org_auth_token = await app.DATABASE.get_valid_org_auth_token(organization_id, OrganizationAuthTokenType.api)
+    org_auth_token = await app.DATABASE.get_valid_org_auth_token(
+        organization_id, OrganizationAuthTokenType.api
+    )
     if org_auth_token:
         api_keys.append(org_auth_token)
     return GetOrganizationAPIKeysResponse(api_keys=api_keys)
@@ -928,10 +1015,14 @@ async def get_org_api_keys(
 async def validate_file_size(file: UploadFile) -> UploadFile:
     try:
         file.file.seek(0, 2)  # Move the pointer to the end of the file
-        size = file.file.tell()  # Get the current position of the pointer, which represents the file size
+        size = (
+            file.file.tell()
+        )  # Get the current position of the pointer, which represents the file size
         file.file.seek(0)  # Reset the pointer back to the beginning
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Could not determine file size.") from e
+        raise HTTPException(
+            status_code=500, detail="Could not determine file size."
+        ) from e
 
     if size > app.SETTINGS_MANAGER.MAX_UPLOAD_FILE_SIZE:
         raise HTTPException(
@@ -950,9 +1041,7 @@ async def upload_file(
     bucket = app.SETTINGS_MANAGER.AWS_S3_BUCKET_UPLOADS
     todays_date = datetime.datetime.now().strftime("%Y-%m-%d")
     uuid_prefixed_filename = f"{str(uuid.uuid4())}_{file.filename}"
-    s3_uri = (
-        f"s3://{bucket}/{app.SETTINGS_MANAGER.ENV}/{current_org.organization_id}/{todays_date}/{uuid_prefixed_filename}"
-    )
+    s3_uri = f"s3://{bucket}/{app.SETTINGS_MANAGER.ENV}/{current_org.organization_id}/{todays_date}/{uuid_prefixed_filename}"
     # Stream the file to S3
     uploaded_s3_uri = await aws_client.upload_file_stream(s3_uri, file.file)
     if not uploaded_s3_uri:

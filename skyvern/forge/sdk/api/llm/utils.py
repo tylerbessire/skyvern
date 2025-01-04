@@ -44,7 +44,9 @@ async def llm_messages_builder(
     return [{"role": "user", "content": messages}]
 
 
-def parse_api_response(response: litellm.ModelResponse, add_assistant_prefix: bool = False) -> dict[str, Any]:
+def parse_api_response(
+    response: litellm.ModelResponse, add_assistant_prefix: bool = False
+) -> dict[str, Any]:
     content = None
     try:
         content = response.choices[0].message.content
@@ -58,7 +60,9 @@ def parse_api_response(response: litellm.ModelResponse, add_assistant_prefix: bo
         return commentjson.loads(content)
     except Exception as e:
         if content:
-            LOG.warning("Failed to parse LLM response. Will retry auto-fixing the response for unescaped quotes.")
+            LOG.warning(
+                "Failed to parse LLM response. Will retry auto-fixing the response for unescaped quotes."
+            )
             try:
                 return fix_and_parse_json_string(content)
             except Exception as e2:
@@ -144,7 +148,9 @@ def fix_unescaped_quotes_in_json(json_string: str) -> str:
 
     # Sort the indices in descending order to avoid index shifting then add the escape character to the string
     if indices_to_add_escape_char:
-        LOG.warning("Unescaped quotes found in JSON string. Adding escape character to fix the issue.")
+        LOG.warning(
+            "Unescaped quotes found in JSON string. Adding escape character to fix the issue."
+        )
     indices_to_add_escape_char.sort(reverse=True)
     for index in indices_to_add_escape_char:
         json_string = json_string[:index] + escape_char + json_string[index:]

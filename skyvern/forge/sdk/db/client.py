@@ -79,7 +79,9 @@ class AgentDB:
     def __init__(self, database_string: str, debug_enabled: bool = False) -> None:
         super().__init__()
         self.debug_enabled = debug_enabled
-        self.engine = create_async_engine(database_string, json_serializer=_custom_json_serializer)
+        self.engine = create_async_engine(
+            database_string, json_serializer=_custom_json_serializer
+        )
         self.Session = async_sessionmaker(bind=self.engine)
 
     async def create_task(
@@ -190,13 +192,17 @@ class AgentDB:
             LOG.exception("UnexpectedError")
             raise
 
-    async def get_task(self, task_id: str, organization_id: str | None = None) -> Task | None:
+    async def get_task(
+        self, task_id: str, organization_id: str | None = None
+    ) -> Task | None:
         """Get a task by its id"""
         try:
             async with self.Session() as session:
                 if task_obj := (
                     await session.scalars(
-                        select(TaskModel).filter_by(task_id=task_id).filter_by(organization_id=organization_id)
+                        select(TaskModel)
+                        .filter_by(task_id=task_id)
+                        .filter_by(organization_id=organization_id)
                     )
                 ).first():
                     return convert_to_task(task_obj, self.debug_enabled)
@@ -214,12 +220,16 @@ class AgentDB:
             LOG.error("UnexpectedError", exc_info=True)
             raise
 
-    async def get_step(self, task_id: str, step_id: str, organization_id: str | None = None) -> Step | None:
+    async def get_step(
+        self, task_id: str, step_id: str, organization_id: str | None = None
+    ) -> Step | None:
         try:
             async with self.Session() as session:
                 if step := (
                     await session.scalars(
-                        select(StepModel).filter_by(step_id=step_id).filter_by(organization_id=organization_id)
+                        select(StepModel)
+                        .filter_by(step_id=step_id)
+                        .filter_by(organization_id=organization_id)
                     )
                 ).first():
                     return convert_to_step(step, debug_enabled=self.debug_enabled)
@@ -233,7 +243,9 @@ class AgentDB:
             LOG.error("UnexpectedError", exc_info=True)
             raise
 
-    async def get_task_steps(self, task_id: str, organization_id: str | None = None) -> list[Step]:
+    async def get_task_steps(
+        self, task_id: str, organization_id: str | None = None
+    ) -> list[Step]:
         try:
             async with self.Session() as session:
                 if steps := (
@@ -245,7 +257,10 @@ class AgentDB:
                         .order_by(StepModel.retry_index)
                     )
                 ).all():
-                    return [convert_to_step(step, debug_enabled=self.debug_enabled) for step in steps]
+                    return [
+                        convert_to_step(step, debug_enabled=self.debug_enabled)
+                        for step in steps
+                    ]
                 else:
                     return []
         except SQLAlchemyError:
@@ -255,7 +270,9 @@ class AgentDB:
             LOG.error("UnexpectedError", exc_info=True)
             raise
 
-    async def get_task_step_models(self, task_id: str, organization_id: str | None = None) -> Sequence[StepModel]:
+    async def get_task_step_models(
+        self, task_id: str, organization_id: str | None = None
+    ) -> Sequence[StepModel]:
         try:
             async with self.Session() as session:
                 return (
@@ -274,14 +291,20 @@ class AgentDB:
             LOG.error("UnexpectedError", exc_info=True)
             raise
 
-    async def get_task_actions(self, task_id: str, organization_id: str | None = None) -> list[Action]:
+    async def get_task_actions(
+        self, task_id: str, organization_id: str | None = None
+    ) -> list[Action]:
         try:
             async with self.Session() as session:
                 query = (
                     select(ActionModel)
                     .filter(ActionModel.organization_id == organization_id)
                     .filter(ActionModel.task_id == task_id)
-                    .order_by(ActionModel.step_order, ActionModel.action_order, ActionModel.created_at)
+                    .order_by(
+                        ActionModel.step_order,
+                        ActionModel.action_order,
+                        ActionModel.created_at,
+                    )
                 )
 
                 actions = (await session.scalars(query)).all()
@@ -294,7 +317,9 @@ class AgentDB:
             LOG.error("UnexpectedError", exc_info=True)
             raise
 
-    async def get_latest_step(self, task_id: str, organization_id: str | None = None) -> Step | None:
+    async def get_latest_step(
+        self, task_id: str, organization_id: str | None = None
+    ) -> Step | None:
         try:
             async with self.Session() as session:
                 if step := (
@@ -354,12 +379,18 @@ class AgentDB:
                     if incremental_cost is not None:
                         step.step_cost = incremental_cost + float(step.step_cost or 0)
                     if incremental_input_tokens is not None:
-                        step.input_token_count = incremental_input_tokens + (step.input_token_count or 0)
+                        step.input_token_count = incremental_input_tokens + (
+                            step.input_token_count or 0
+                        )
                     if incremental_output_tokens is not None:
-                        step.output_token_count = incremental_output_tokens + (step.output_token_count or 0)
+                        step.output_token_count = incremental_output_tokens + (
+                            step.output_token_count or 0
+                        )
 
                     await session.commit()
-                    updated_step = await self.get_step(task_id, step_id, organization_id)
+                    updated_step = await self.get_step(
+                        task_id, step_id, organization_id
+                    )
                     if not updated_step:
                         raise NotFoundError("Step not found")
                     return updated_step
@@ -375,12 +406,16 @@ class AgentDB:
             LOG.error("UnexpectedError", exc_info=True)
             raise
 
-    async def clear_task_failure_reason(self, organization_id: str, task_id: str) -> Task:
+    async def clear_task_failure_reason(
+        self, organization_id: str, task_id: str
+    ) -> Task:
         try:
             async with self.Session() as session:
                 if task := (
                     await session.scalars(
-                        select(TaskModel).filter_by(task_id=task_id).filter_by(organization_id=organization_id)
+                        select(TaskModel)
+                        .filter_by(task_id=task_id)
+                        .filter_by(organization_id=organization_id)
                     )
                 ).first():
                     task.failure_reason = None
@@ -423,7 +458,9 @@ class AgentDB:
             async with self.Session() as session:
                 if task := (
                     await session.scalars(
-                        select(TaskModel).filter_by(task_id=task_id).filter_by(organization_id=organization_id)
+                        select(TaskModel)
+                        .filter_by(task_id=task_id)
+                        .filter_by(organization_id=organization_id)
                     )
                 ).first():
                     if status is not None:
@@ -437,7 +474,9 @@ class AgentDB:
                     if max_steps_per_run is not None:
                         task.max_steps_per_run = max_steps_per_run
                     await session.commit()
-                    updated_task = await self.get_task(task_id, organization_id=organization_id)
+                    updated_task = await self.get_task(
+                        task_id, organization_id=organization_id
+                    )
                     if not updated_task:
                         raise NotFoundError("Task not found")
                     return updated_task
@@ -481,7 +520,9 @@ class AgentDB:
         try:
             async with self.Session() as session:
                 db_page = page - 1  # offset logic is 0 based
-                query = select(TaskModel).filter(TaskModel.organization_id == organization_id)
+                query = select(TaskModel).filter(
+                    TaskModel.organization_id == organization_id
+                )
                 if task_status:
                     query = query.filter(TaskModel.status.in_(task_status))
                 if workflow_run_id:
@@ -490,12 +531,19 @@ class AgentDB:
                     query = query.filter(TaskModel.workflow_run_id.is_(None))
                 order_by_col = getattr(TaskModel, order_by_column)
                 query = (
-                    query.order_by(order_by_col.desc() if order == SortDirection.desc else order_by_col.asc())
+                    query.order_by(
+                        order_by_col.desc()
+                        if order == SortDirection.desc
+                        else order_by_col.asc()
+                    )
                     .limit(page_size)
                     .offset(db_page * page_size)
                 )
                 tasks = (await session.scalars(query)).all()
-                return [convert_to_task(task, debug_enabled=self.debug_enabled) for task in tasks]
+                return [
+                    convert_to_task(task, debug_enabled=self.debug_enabled)
+                    for task in tasks
+                ]
         except SQLAlchemyError:
             LOG.error("SQLAlchemyError", exc_info=True)
             raise
@@ -507,7 +555,11 @@ class AgentDB:
         try:
             async with self.Session() as session:
                 if organization := (
-                    await session.scalars(select(OrganizationModel).filter_by(organization_id=organization_id))
+                    await session.scalars(
+                        select(OrganizationModel).filter_by(
+                            organization_id=organization_id
+                        )
+                    )
                 ).first():
                     return convert_to_organization(organization)
                 else:
@@ -521,7 +573,11 @@ class AgentDB:
 
     async def get_organization_by_domain(self, domain: str) -> Organization | None:
         async with self.Session() as session:
-            if organization := (await session.scalars(select(OrganizationModel).filter_by(domain=domain))).first():
+            if organization := (
+                await session.scalars(
+                    select(OrganizationModel).filter_by(domain=domain)
+                )
+            ).first():
                 return convert_to_organization(organization)
             return None
 
@@ -557,7 +613,9 @@ class AgentDB:
     ) -> Organization:
         async with self.Session() as session:
             organization = (
-                await session.scalars(select(OrganizationModel).filter_by(organization_id=organization_id))
+                await session.scalars(
+                    select(OrganizationModel).filter_by(organization_id=organization_id)
+                )
             ).first()
             if not organization:
                 raise NotFoundError
@@ -686,7 +744,10 @@ class AgentDB:
                         .order_by(ArtifactModel.created_at)
                     )
                 ).all():
-                    return [convert_to_artifact(artifact, self.debug_enabled) for artifact in artifacts]
+                    return [
+                        convert_to_artifact(artifact, self.debug_enabled)
+                        for artifact in artifacts
+                    ]
                 else:
                     return []
         except SQLAlchemyError:
@@ -814,17 +875,26 @@ class AgentDB:
             async with self.Session() as session:
                 artifact_query = select(ArtifactModel).filter_by(task_id=task_id)
                 if organization_id:
-                    artifact_query = artifact_query.filter_by(organization_id=organization_id)
+                    artifact_query = artifact_query.filter_by(
+                        organization_id=organization_id
+                    )
                 if step_id:
                     artifact_query = artifact_query.filter_by(step_id=step_id)
                 if artifact_types:
-                    artifact_query = artifact_query.filter(ArtifactModel.artifact_type.in_(artifact_types))
+                    artifact_query = artifact_query.filter(
+                        ArtifactModel.artifact_type.in_(artifact_types)
+                    )
 
-                artifacts = (await session.scalars(artifact_query.order_by(ArtifactModel.created_at.desc()))).fetchmany(
-                    n
-                )
+                artifacts = (
+                    await session.scalars(
+                        artifact_query.order_by(ArtifactModel.created_at.desc())
+                    )
+                ).fetchmany(n)
                 if artifacts:
-                    return [convert_to_artifact(artifact, self.debug_enabled) for artifact in artifacts]
+                    return [
+                        convert_to_artifact(artifact, self.debug_enabled)
+                        for artifact in artifacts
+                    ]
                 return None
         except SQLAlchemyError:
             LOG.exception("SQLAlchemyError")
@@ -841,10 +911,16 @@ class AgentDB:
     ) -> Task | None:
         try:
             async with self.Session() as session:
-                query = select(TaskModel).filter_by(organization_id=organization_id).filter_by(workflow_id=workflow_id)
+                query = (
+                    select(TaskModel)
+                    .filter_by(organization_id=organization_id)
+                    .filter_by(workflow_id=workflow_id)
+                )
                 if before:
                     query = query.filter(TaskModel.created_at < before)
-                task = (await session.scalars(query.order_by(TaskModel.created_at.desc()))).first()
+                task = (
+                    await session.scalars(query.order_by(TaskModel.created_at.desc()))
+                ).first()
                 if task:
                     return convert_to_task(task, debug_enabled=self.debug_enabled)
                 return None
@@ -889,7 +965,9 @@ class AgentDB:
             await session.refresh(workflow)
             return convert_to_workflow(workflow, self.debug_enabled)
 
-    async def soft_delete_workflow_by_id(self, workflow_id: str, organization_id: str) -> None:
+    async def soft_delete_workflow_by_id(
+        self, workflow_id: str, organization_id: str
+    ) -> None:
         try:
             async with self.Session() as session:
                 # soft delete the workflow by setting the deleted_at field to the current time
@@ -906,14 +984,20 @@ class AgentDB:
             LOG.error("SQLAlchemyError in soft_delete_workflow_by_id", exc_info=True)
             raise
 
-    async def get_workflow(self, workflow_id: str, organization_id: str | None = None) -> Workflow | None:
+    async def get_workflow(
+        self, workflow_id: str, organization_id: str | None = None
+    ) -> Workflow | None:
         try:
             async with self.Session() as session:
                 get_workflow_query = (
-                    select(WorkflowModel).filter_by(workflow_id=workflow_id).filter(WorkflowModel.deleted_at.is_(None))
+                    select(WorkflowModel)
+                    .filter_by(workflow_id=workflow_id)
+                    .filter(WorkflowModel.deleted_at.is_(None))
                 )
                 if organization_id:
-                    get_workflow_query = get_workflow_query.filter_by(organization_id=organization_id)
+                    get_workflow_query = get_workflow_query.filter_by(
+                        organization_id=organization_id
+                    )
                 if workflow := (await session.scalars(get_workflow_query)).first():
                     return convert_to_workflow(workflow, self.debug_enabled)
                 return None
@@ -929,14 +1013,22 @@ class AgentDB:
         exclude_deleted: bool = True,
     ) -> Workflow | None:
         try:
-            get_workflow_query = select(WorkflowModel).filter_by(workflow_permanent_id=workflow_permanent_id)
+            get_workflow_query = select(WorkflowModel).filter_by(
+                workflow_permanent_id=workflow_permanent_id
+            )
             if exclude_deleted:
-                get_workflow_query = get_workflow_query.filter(WorkflowModel.deleted_at.is_(None))
+                get_workflow_query = get_workflow_query.filter(
+                    WorkflowModel.deleted_at.is_(None)
+                )
             if organization_id:
-                get_workflow_query = get_workflow_query.filter_by(organization_id=organization_id)
+                get_workflow_query = get_workflow_query.filter_by(
+                    organization_id=organization_id
+                )
             if version:
                 get_workflow_query = get_workflow_query.filter_by(version=version)
-            get_workflow_query = get_workflow_query.order_by(WorkflowModel.version.desc())
+            get_workflow_query = get_workflow_query.order_by(
+                WorkflowModel.version.desc()
+            )
             async with self.Session() as session:
                 if workflow := (await session.scalars(get_workflow_query)).first():
                     return convert_to_workflow(workflow, self.debug_enabled)
@@ -978,18 +1070,28 @@ class AgentDB:
                 main_query = select(WorkflowModel).join(
                     subquery,
                     (WorkflowModel.organization_id == subquery.c.organization_id)
-                    & (WorkflowModel.workflow_permanent_id == subquery.c.workflow_permanent_id)
+                    & (
+                        WorkflowModel.workflow_permanent_id
+                        == subquery.c.workflow_permanent_id
+                    )
                     & (WorkflowModel.version == subquery.c.max_version),
                 )
                 if only_saved_tasks:
                     main_query = main_query.where(WorkflowModel.is_saved_task.is_(True))
                 elif only_workflows:
-                    main_query = main_query.where(WorkflowModel.is_saved_task.is_(False))
+                    main_query = main_query.where(
+                        WorkflowModel.is_saved_task.is_(False)
+                    )
                 main_query = (
-                    main_query.order_by(WorkflowModel.created_at.desc()).limit(page_size).offset(db_page * page_size)
+                    main_query.order_by(WorkflowModel.created_at.desc())
+                    .limit(page_size)
+                    .offset(db_page * page_size)
                 )
                 workflows = (await session.scalars(main_query)).all()
-                return [convert_to_workflow(workflow, self.debug_enabled) for workflow in workflows]
+                return [
+                    convert_to_workflow(workflow, self.debug_enabled)
+                    for workflow in workflows
+                ]
         except SQLAlchemyError:
             LOG.error("SQLAlchemyError", exc_info=True)
             raise
@@ -1006,10 +1108,14 @@ class AgentDB:
         try:
             async with self.Session() as session:
                 get_workflow_query = (
-                    select(WorkflowModel).filter_by(workflow_id=workflow_id).filter(WorkflowModel.deleted_at.is_(None))
+                    select(WorkflowModel)
+                    .filter_by(workflow_id=workflow_id)
+                    .filter(WorkflowModel.deleted_at.is_(None))
                 )
                 if organization_id:
-                    get_workflow_query = get_workflow_query.filter_by(organization_id=organization_id)
+                    get_workflow_query = get_workflow_query.filter_by(
+                        organization_id=organization_id
+                    )
                 if workflow := (await session.scalars(get_workflow_query)).first():
                     if title:
                         workflow.title = title
@@ -1048,8 +1154,12 @@ class AgentDB:
                 .where(WorkflowModel.deleted_at.is_(None))
             )
             if organization_id:
-                update_deleted_at_query = update_deleted_at_query.filter_by(organization_id=organization_id)
-            update_deleted_at_query = update_deleted_at_query.values(deleted_at=datetime.utcnow())
+                update_deleted_at_query = update_deleted_at_query.filter_by(
+                    organization_id=organization_id
+                )
+            update_deleted_at_query = update_deleted_at_query.values(
+                deleted_at=datetime.utcnow()
+            )
             await session.execute(update_deleted_at_query)
             await session.commit()
 
@@ -1083,10 +1193,14 @@ class AgentDB:
             LOG.error("SQLAlchemyError", exc_info=True)
             raise
 
-    async def update_workflow_run(self, workflow_run_id: str, status: WorkflowRunStatus) -> WorkflowRun | None:
+    async def update_workflow_run(
+        self, workflow_run_id: str, status: WorkflowRunStatus
+    ) -> WorkflowRun | None:
         async with self.Session() as session:
             workflow_run = (
-                await session.scalars(select(WorkflowRunModel).filter_by(workflow_run_id=workflow_run_id))
+                await session.scalars(
+                    select(WorkflowRunModel).filter_by(workflow_run_id=workflow_run_id)
+                )
             ).first()
             if workflow_run:
                 workflow_run.status = status
@@ -1103,7 +1217,11 @@ class AgentDB:
         try:
             async with self.Session() as session:
                 if workflow_run := (
-                    await session.scalars(select(WorkflowRunModel).filter_by(workflow_run_id=workflow_run_id))
+                    await session.scalars(
+                        select(WorkflowRunModel).filter_by(
+                            workflow_run_id=workflow_run_id
+                        )
+                    )
                 ).first():
                     return convert_to_workflow_run(workflow_run)
                 return None
@@ -1111,7 +1229,9 @@ class AgentDB:
             LOG.error("SQLAlchemyError", exc_info=True)
             raise
 
-    async def get_workflow_runs(self, organization_id: str, page: int = 1, page_size: int = 10) -> list[WorkflowRun]:
+    async def get_workflow_runs(
+        self, organization_id: str, page: int = 1, page_size: int = 10
+    ) -> list[WorkflowRun]:
         try:
             async with self.Session() as session:
                 db_page = page - 1  # offset logic is 0 based
@@ -1130,7 +1250,11 @@ class AgentDB:
             raise
 
     async def get_workflow_runs_for_workflow_permanent_id(
-        self, workflow_permanent_id: str, organization_id: str, page: int = 1, page_size: int = 10
+        self,
+        workflow_permanent_id: str,
+        organization_id: str,
+        page: int = 1,
+        page_size: int = 10,
     ) -> list[WorkflowRun]:
         try:
             async with self.Session() as session:
@@ -1138,7 +1262,10 @@ class AgentDB:
                 workflow_runs = (
                     await session.scalars(
                         select(WorkflowRunModel)
-                        .filter(WorkflowRunModel.workflow_permanent_id == workflow_permanent_id)
+                        .filter(
+                            WorkflowRunModel.workflow_permanent_id
+                            == workflow_permanent_id
+                        )
                         .filter(WorkflowRunModel.organization_id == organization_id)
                         .order_by(WorkflowRunModel.created_at.desc())
                         .limit(page_size)
@@ -1175,7 +1302,9 @@ class AgentDB:
                 session.add(workflow_parameter)
                 await session.commit()
                 await session.refresh(workflow_parameter)
-                return convert_to_workflow_parameter(workflow_parameter, self.debug_enabled)
+                return convert_to_workflow_parameter(
+                    workflow_parameter, self.debug_enabled
+                )
         except SQLAlchemyError:
             LOG.error("SQLAlchemyError", exc_info=True)
             raise
@@ -1224,7 +1353,9 @@ class AgentDB:
             session.add(bitwarden_login_credential_parameter)
             await session.commit()
             await session.refresh(bitwarden_login_credential_parameter)
-            return convert_to_bitwarden_login_credential_parameter(bitwarden_login_credential_parameter)
+            return convert_to_bitwarden_login_credential_parameter(
+                bitwarden_login_credential_parameter
+            )
 
     async def create_bitwarden_sensitive_information_parameter(
         self,
@@ -1253,7 +1384,9 @@ class AgentDB:
             session.add(bitwarden_sensitive_information_parameter)
             await session.commit()
             await session.refresh(bitwarden_sensitive_information_parameter)
-            return convert_to_bitwarden_sensitive_information_parameter(bitwarden_sensitive_information_parameter)
+            return convert_to_bitwarden_sensitive_information_parameter(
+                bitwarden_sensitive_information_parameter
+            )
 
     async def create_bitwarden_credit_card_data_parameter(
         self,
@@ -1280,7 +1413,9 @@ class AgentDB:
             session.add(bitwarden_credit_card_data_parameter)
             await session.commit()
             await session.refresh(bitwarden_credit_card_data_parameter)
-            return BitwardenCreditCardDataParameter.model_validate(bitwarden_credit_card_data_parameter)
+            return BitwardenCreditCardDataParameter.model_validate(
+                bitwarden_credit_card_data_parameter
+            )
 
     async def create_output_parameter(
         self,
@@ -1299,18 +1434,27 @@ class AgentDB:
             await session.refresh(output_parameter)
             return convert_to_output_parameter(output_parameter)
 
-    async def get_workflow_output_parameters(self, workflow_id: str) -> list[OutputParameter]:
+    async def get_workflow_output_parameters(
+        self, workflow_id: str
+    ) -> list[OutputParameter]:
         try:
             async with self.Session() as session:
                 output_parameters = (
-                    await session.scalars(select(OutputParameterModel).filter_by(workflow_id=workflow_id))
+                    await session.scalars(
+                        select(OutputParameterModel).filter_by(workflow_id=workflow_id)
+                    )
                 ).all()
-                return [convert_to_output_parameter(parameter) for parameter in output_parameters]
+                return [
+                    convert_to_output_parameter(parameter)
+                    for parameter in output_parameters
+                ]
         except SQLAlchemyError:
             LOG.error("SQLAlchemyError", exc_info=True)
             raise
 
-    async def get_workflow_run_output_parameters(self, workflow_run_id: str) -> list[WorkflowRunOutputParameter]:
+    async def get_workflow_run_output_parameters(
+        self, workflow_run_id: str
+    ) -> list[WorkflowRunOutputParameter]:
         try:
             async with self.Session() as session:
                 workflow_run_output_parameters = (
@@ -1321,7 +1465,9 @@ class AgentDB:
                     )
                 ).all()
                 return [
-                    convert_to_workflow_run_output_parameter(parameter, self.debug_enabled)
+                    convert_to_workflow_run_output_parameter(
+                        parameter, self.debug_enabled
+                    )
                     for parameter in workflow_run_output_parameters
                 ]
         except SQLAlchemyError:
@@ -1351,7 +1497,9 @@ class AgentDB:
                     workflow_run_output_parameter.value = value
                     await session.commit()
                     await session.refresh(workflow_run_output_parameter)
-                    return convert_to_workflow_run_output_parameter(workflow_run_output_parameter, self.debug_enabled)
+                    return convert_to_workflow_run_output_parameter(
+                        workflow_run_output_parameter, self.debug_enabled
+                    )
 
                 # if it does not exist, create a new one
                 workflow_run_output_parameter = WorkflowRunOutputParameterModel(
@@ -1362,7 +1510,9 @@ class AgentDB:
                 session.add(workflow_run_output_parameter)
                 await session.commit()
                 await session.refresh(workflow_run_output_parameter)
-                return convert_to_workflow_run_output_parameter(workflow_run_output_parameter, self.debug_enabled)
+                return convert_to_workflow_run_output_parameter(
+                    workflow_run_output_parameter, self.debug_enabled
+                )
 
         except SQLAlchemyError:
             LOG.error("SQLAlchemyError", exc_info=True)
@@ -1390,31 +1540,48 @@ class AgentDB:
                 workflow_run_output_parameter.value = value
                 await session.commit()
                 await session.refresh(workflow_run_output_parameter)
-                return convert_to_workflow_run_output_parameter(workflow_run_output_parameter, self.debug_enabled)
+                return convert_to_workflow_run_output_parameter(
+                    workflow_run_output_parameter, self.debug_enabled
+                )
         except SQLAlchemyError:
             LOG.error("SQLAlchemyError", exc_info=True)
             raise
 
-    async def get_workflow_parameters(self, workflow_id: str) -> list[WorkflowParameter]:
+    async def get_workflow_parameters(
+        self, workflow_id: str
+    ) -> list[WorkflowParameter]:
         try:
             async with self.Session() as session:
                 workflow_parameters = (
-                    await session.scalars(select(WorkflowParameterModel).filter_by(workflow_id=workflow_id))
+                    await session.scalars(
+                        select(WorkflowParameterModel).filter_by(
+                            workflow_id=workflow_id
+                        )
+                    )
                 ).all()
-                return [convert_to_workflow_parameter(parameter) for parameter in workflow_parameters]
+                return [
+                    convert_to_workflow_parameter(parameter)
+                    for parameter in workflow_parameters
+                ]
         except SQLAlchemyError:
             LOG.error("SQLAlchemyError", exc_info=True)
             raise
 
-    async def get_workflow_parameter(self, workflow_parameter_id: str) -> WorkflowParameter | None:
+    async def get_workflow_parameter(
+        self, workflow_parameter_id: str
+    ) -> WorkflowParameter | None:
         try:
             async with self.Session() as session:
                 if workflow_parameter := (
                     await session.scalars(
-                        select(WorkflowParameterModel).filter_by(workflow_parameter_id=workflow_parameter_id)
+                        select(WorkflowParameterModel).filter_by(
+                            workflow_parameter_id=workflow_parameter_id
+                        )
                     )
                 ).first():
-                    return convert_to_workflow_parameter(workflow_parameter, self.debug_enabled)
+                    return convert_to_workflow_parameter(
+                        workflow_parameter, self.debug_enabled
+                    )
                 return None
         except SQLAlchemyError:
             LOG.error("SQLAlchemyError", exc_info=True)
@@ -1434,7 +1601,9 @@ class AgentDB:
                 session.add(workflow_run_parameter)
                 await session.commit()
                 await session.refresh(workflow_run_parameter)
-                return convert_to_workflow_run_parameter(workflow_run_parameter, workflow_parameter, self.debug_enabled)
+                return convert_to_workflow_run_parameter(
+                    workflow_run_parameter, workflow_parameter, self.debug_enabled
+                )
         except SQLAlchemyError:
             LOG.error("SQLAlchemyError", exc_info=True)
             raise
@@ -1445,11 +1614,17 @@ class AgentDB:
         try:
             async with self.Session() as session:
                 workflow_run_parameters = (
-                    await session.scalars(select(WorkflowRunParameterModel).filter_by(workflow_run_id=workflow_run_id))
+                    await session.scalars(
+                        select(WorkflowRunParameterModel).filter_by(
+                            workflow_run_id=workflow_run_id
+                        )
+                    )
                 ).all()
                 results = []
                 for workflow_run_parameter in workflow_run_parameters:
-                    workflow_parameter = await self.get_workflow_parameter(workflow_run_parameter.workflow_parameter_id)
+                    workflow_parameter = await self.get_workflow_parameter(
+                        workflow_run_parameter.workflow_parameter_id
+                    )
                     if not workflow_parameter:
                         raise WorkflowParameterNotFound(
                             workflow_parameter_id=workflow_run_parameter.workflow_parameter_id
@@ -1490,10 +1665,15 @@ class AgentDB:
             async with self.Session() as session:
                 tasks = (
                     await session.scalars(
-                        select(TaskModel).filter_by(workflow_run_id=workflow_run_id).order_by(TaskModel.created_at)
+                        select(TaskModel)
+                        .filter_by(workflow_run_id=workflow_run_id)
+                        .order_by(TaskModel.created_at)
                     )
                 ).all()
-                return [convert_to_task(task, debug_enabled=self.debug_enabled) for task in tasks]
+                return [
+                    convert_to_task(task, debug_enabled=self.debug_enabled)
+                    for task in tasks
+                ]
         except SQLAlchemyError:
             LOG.error("SQLAlchemyError", exc_info=True)
             raise
@@ -1595,7 +1775,10 @@ class AgentDB:
                 select(TOTPCodeModel)
                 .filter_by(organization_id=organization_id)
                 .filter_by(totp_identifier=totp_identifier)
-                .filter(TOTPCodeModel.created_at > datetime.utcnow() - timedelta(minutes=valid_lifespan_minutes))
+                .filter(
+                    TOTPCodeModel.created_at
+                    > datetime.utcnow() - timedelta(minutes=valid_lifespan_minutes)
+                )
                 .order_by(TOTPCodeModel.created_at.desc())
             )
             totp_code = (await session.scalars(query)).all()
@@ -1642,7 +1825,11 @@ class AgentDB:
             query = (
                 select(ActionModel)
                 .filter(ActionModel.task_id == subquery.c.task_id)
-                .order_by(ActionModel.step_order, ActionModel.action_order, ActionModel.created_at)
+                .order_by(
+                    ActionModel.step_order,
+                    ActionModel.action_order,
+                    ActionModel.created_at,
+                )
             )
 
             actions = (await session.scalars(query)).all()
@@ -1653,7 +1840,11 @@ class AgentDB:
             query = (
                 select(ActionModel)
                 .filter_by(task_id=task_id)
-                .order_by(ActionModel.step_order, ActionModel.action_order, ActionModel.created_at)
+                .order_by(
+                    ActionModel.step_order,
+                    ActionModel.action_order,
+                    ActionModel.created_at,
+                )
             )
             actions = (await session.scalars(query)).all()
             return [Action.model_validate(action) for action in actions]

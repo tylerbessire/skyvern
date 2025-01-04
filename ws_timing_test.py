@@ -16,10 +16,12 @@ logging.basicConfig(
     handlers=[logging.FileHandler("ws_timing_test.log"), logging.StreamHandler()],
 )
 
+
 class WebSocketProtocol(Protocol):
     async def send(self, message: str) -> None: ...
     async def recv(self) -> Data: ...
     async def close(self, code: int = 1000, reason: str = "") -> None: ...
+
 
 class WSTimingAnalyzer:
     def __init__(self) -> None:
@@ -70,6 +72,7 @@ class WSTimingAnalyzer:
                             self.analyze_undefined_pattern()
         except Exception as e:
             logging.error(f"Error analyzing timing: {str(e)}")
+
     def analyze_intervals(self) -> None:
         """Analyze patterns in crash intervals"""
         recent = self.crash_intervals[-3:]
@@ -82,31 +85,41 @@ class WSTimingAnalyzer:
         # Check for decreasing intervals
         if all(recent[i] > recent[i + 1] for i in range(len(recent) - 1)):
             logging.warning("Decreasing crash intervals detected")
+
     def analyze_auth_pattern(self) -> None:
         """Analyze authentication error patterns"""
         recent = self.auth_timing[-2:]
         if recent[1] - recent[0] < 2.0:
             logging.warning(f"Rapid auth errors: {recent[1] - recent[0]:.2f}s apart")
+
     def analyze_undefined_pattern(self) -> None:
         """Analyze undefined state patterns"""
         recent = self.undefined_timing[-2:]
         if recent[1] - recent[0] < 1.0:
-            logging.warning(f"Rapid undefined states: {recent[1] - recent[0]:.2f}s apart")
+            logging.warning(
+                f"Rapid undefined states: {recent[1] - recent[0]:.2f}s apart"
+            )
+
     def get_statistics(self) -> Dict[str, float]:
         """Get current timing statistics"""
         stats = {
             "total_crashes": len(self.crash_times),
-            "avg_interval": sum(self.crash_intervals) / len(self.crash_intervals) if self.crash_intervals else 0,
+            "avg_interval": (
+                sum(self.crash_intervals) / len(self.crash_intervals)
+                if self.crash_intervals
+                else 0
+            ),
             "auth_errors": len(self.auth_timing),
             "undefined_states": len(self.undefined_timing),
             "message_count": len(self.message_times),
         }
         return stats
 
+
 async def test_ws_timing() -> None:
     analyzer = WSTimingAnalyzer()
     uri = "wss://trustdice.win/crash/socket.io/?EIO=4&transport=websocket"
-    
+
     try:
         async with websockets.connect(uri) as websocket:
             logging.info("Connected to WebSocket")
@@ -140,6 +153,7 @@ async def test_ws_timing() -> None:
                 f,
                 indent=2,
             )
+
 
 if __name__ == "__main__":
     asyncio.run(test_ws_timing())

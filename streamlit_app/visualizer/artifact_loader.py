@@ -11,7 +11,9 @@ from skyvern.forge.sdk.api.aws import AsyncAWSClient
 async_s3_client = AsyncAWSClient()
 
 
-def read_artifact(uri: str, is_image: bool = False, is_webm: bool = False) -> Image.Image | str | bytes:
+def read_artifact(
+    uri: str, is_image: bool = False, is_webm: bool = False
+) -> Image.Image | str | bytes:
     """Load and display an artifact based on its URI."""
     if uri.startswith("s3://"):
         downloaded_bytes = asyncio.run(async_s3_client.download_file(uri))
@@ -40,7 +42,9 @@ def read_artifact(uri: str, is_image: bool = False, is_webm: bool = False) -> Im
         raise ValueError(f"Unsupported URI: {uri}")
 
 
-def read_artifact_safe(uri: str, is_image: bool = False, is_webm: bool = False) -> Image.Image | str | bytes:
+def read_artifact_safe(
+    uri: str, is_image: bool = False, is_webm: bool = False
+) -> Image.Image | str | bytes:
     """Load and display an artifact based on its URI."""
     try:
         return read_artifact(uri, is_image, is_webm)
@@ -48,7 +52,9 @@ def read_artifact_safe(uri: str, is_image: bool = False, is_webm: bool = False) 
         return f"Failed to load artifact: {e}"
 
 
-def streamlit_content_safe(st_obj: Any, f: Callable, content: bytes, message: str, **kwargs: dict[str, Any]) -> None:
+def streamlit_content_safe(
+    st_obj: Any, f: Callable, content: bytes, message: str, **kwargs: dict[str, Any]
+) -> None:
     try:
         if content:
             f(content, **kwargs)
@@ -63,7 +69,9 @@ def streamlit_show_recording(st_obj: Any, uri: str) -> None:
     # ignoring type because is_webm will return bytes
     content = read_artifact_safe(uri, is_webm=True)  # type: ignore
     if content:
-        random_key = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        random_key = "".join(
+            random.choices(string.ascii_uppercase + string.digits, k=6)
+        )
         st_obj.download_button(
             "Download recording",
             content,

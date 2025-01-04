@@ -59,7 +59,9 @@ def _remove_skyvern_attributes(element: Dict) -> Dict:
     return element_copied
 
 
-async def _convert_svg_to_string(task: Task, step: Step, organization: Organization | None, element: Dict) -> None:
+async def _convert_svg_to_string(
+    task: Task, step: Step, organization: Organization | None, element: Dict
+) -> None:
     if element.get("tagName") != "svg":
         return
 
@@ -99,11 +101,15 @@ async def _convert_svg_to_string(task: Task, step: Step, organization: Organizat
             return
 
         LOG.debug("call LLM to convert SVG to string shape", element_id=element_id)
-        svg_convert_prompt = prompt_engine.load_prompt("svg-convert", svg_element=svg_html)
+        svg_convert_prompt = prompt_engine.load_prompt(
+            "svg-convert", svg_element=svg_html
+        )
 
         for retry in range(SVG_RETRY_ATTEMPT):
             try:
-                json_response = await app.SECONDARY_LLM_API_HANDLER(prompt=svg_convert_prompt, step=step)
+                json_response = await app.SECONDARY_LLM_API_HANDLER(
+                    prompt=svg_convert_prompt, step=step
+                )
                 svg_shape = json_response.get("shape", "")
                 if not svg_shape:
                     raise Exception("Empty SVG shape replied by secondary llm")
@@ -146,14 +152,22 @@ class AgentFunction:
         if not has_valid_step_status:
             reasons.append(f"invalid_step_status:{step.status}")
         # can't execute if the task has another step that is running
-        steps = await app.DATABASE.get_task_steps(task_id=task.task_id, organization_id=task.organization_id)
-        has_no_running_steps = not any(step.status == StepStatus.running for step in steps)
+        steps = await app.DATABASE.get_task_steps(
+            task_id=task.task_id, organization_id=task.organization_id
+        )
+        has_no_running_steps = not any(
+            step.status == StepStatus.running for step in steps
+        )
         if not has_no_running_steps:
             reasons.append(f"another_step_is_running_for_task:{task.task_id}")
 
-        can_execute = has_valid_task_status and has_valid_step_status and has_no_running_steps
+        can_execute = (
+            has_valid_task_status and has_valid_step_status and has_no_running_steps
+        )
         if not can_execute:
-            raise StepUnableToExecuteError(step_id=step.step_id, reason=f"Cannot execute step. Reasons: {reasons}")
+            raise StepUnableToExecuteError(
+                step_id=step.step_id, reason=f"Cannot execute step. Reasons: {reasons}"
+            )
 
     async def prepare_step_execution(
         self,
@@ -181,7 +195,9 @@ class AgentFunction:
         step: Step,
         organization: Organization | None = None,
     ) -> CleanupElementTreeFunc:
-        async def cleanup_element_tree_func(url: str, element_tree: list[dict]) -> list[dict]:
+        async def cleanup_element_tree_func(
+            url: str, element_tree: list[dict]
+        ) -> list[dict]:
             """
             Remove rect and attribute.unique_id from the elements.
             The reason we're doing it is to

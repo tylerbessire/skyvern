@@ -39,7 +39,9 @@ def upgrade() -> None:
             nullable=True,
         ),
     )
-    op.add_column("workflows", sa.Column("webhook_callback_url", sa.String(), nullable=True))
+    op.add_column(
+        "workflows", sa.Column("webhook_callback_url", sa.String(), nullable=True)
+    )
     # ### end Alembic commands ###
 
 

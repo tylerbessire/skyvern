@@ -8,7 +8,9 @@ class SkyvernException(Exception):
 
 
 class SkyvernHTTPException(SkyvernException):
-    def __init__(self, message: str | None = None, status_code: int = status.HTTP_400_BAD_REQUEST):
+    def __init__(
+        self, message: str | None = None, status_code: int = status.HTTP_400_BAD_REQUEST
+    ):
         self.status_code = status_code
         super().__init__(message)
 
@@ -30,10 +32,14 @@ class FailedToSendWebhook(SkyvernException):
         workflow_run_id: str | None = None,
         workflow_id: str | None = None,
     ):
-        workflow_run_str = f"workflow_run_id={workflow_run_id}" if workflow_run_id else ""
+        workflow_run_str = (
+            f"workflow_run_id={workflow_run_id}" if workflow_run_id else ""
+        )
         workflow_str = f"workflow_id={workflow_id}" if workflow_id else ""
         task_str = f"task_id={task_id}" if task_id else ""
-        super().__init__(f"Failed to send webhook. {workflow_run_str} {workflow_str} {task_str}")
+        super().__init__(
+            f"Failed to send webhook. {workflow_run_str} {workflow_str} {task_str}"
+        )
 
 
 class ProxyLocationNotSupportedError(SkyvernException):
@@ -43,12 +49,16 @@ class ProxyLocationNotSupportedError(SkyvernException):
 
 class TaskNotFound(SkyvernHTTPException):
     def __init__(self, task_id: str | None = None):
-        super().__init__(f"Task {task_id} not found", status_code=status.HTTP_404_NOT_FOUND)
+        super().__init__(
+            f"Task {task_id} not found", status_code=status.HTTP_404_NOT_FOUND
+        )
 
 
 class ScriptNotFound(SkyvernException):
     def __init__(self, script_name: str | None = None):
-        super().__init__(f"Script {script_name} not found. Has the script been registered?")
+        super().__init__(
+            f"Script {script_name} not found. Has the script been registered?"
+        )
 
 
 class MissingElement(SkyvernException):
@@ -60,7 +70,9 @@ class MissingElement(SkyvernException):
 
 
 class MultipleElementsFound(SkyvernException):
-    def __init__(self, num: int, selector: str | None = None, element_id: str | None = None):
+    def __init__(
+        self, num: int, selector: str | None = None, element_id: str | None = None
+    ):
         super().__init__(
             f"Found {num} elements. Expected 1. num_elements={num} selector={selector} element_id={element_id}",
         )
@@ -84,18 +96,26 @@ class MissingBrowserState(SkyvernException):
 class MissingBrowserStatePage(SkyvernException):
     def __init__(self, task_id: str | None = None, workflow_run_id: str | None = None):
         task_str = f"task_id={task_id}" if task_id else ""
-        workflow_run_str = f"workflow_run_id={workflow_run_id}" if workflow_run_id else ""
-        super().__init__(f"Browser state page is missing. {task_str} {workflow_run_str}")
+        workflow_run_str = (
+            f"workflow_run_id={workflow_run_id}" if workflow_run_id else ""
+        )
+        super().__init__(
+            f"Browser state page is missing. {task_str} {workflow_run_str}"
+        )
 
 
 class MissingWorkflowRunBrowserState(SkyvernException):
     def __init__(self, workflow_run_id: str, task_id: str) -> None:
-        super().__init__(f"Browser state for workflow run {workflow_run_id} and task {task_id} is missing.")
+        super().__init__(
+            f"Browser state for workflow run {workflow_run_id} and task {task_id} is missing."
+        )
 
 
 class CaptchaNotSolvedInTime(SkyvernException):
     def __init__(self, task_id: str, final_state: str) -> None:
-        super().__init__(f"Captcha not solved in time for task {task_id}. Final state: {final_state}")
+        super().__init__(
+            f"Captcha not solved in time for task {task_id}. Final state: {final_state}"
+        )
 
 
 class EnablingCaptchaSolver(SkyvernException):
@@ -104,7 +124,9 @@ class EnablingCaptchaSolver(SkyvernException):
 
 
 class ContextParameterValueNotFound(SkyvernException):
-    def __init__(self, parameter_key: str, existing_keys: list[str], workflow_run_id: str) -> None:
+    def __init__(
+        self, parameter_key: str, existing_keys: list[str], workflow_run_id: str
+    ) -> None:
         super().__init__(
             f"Context parameter value not found during workflow run {workflow_run_id}. "
             f"Parameter key: {parameter_key}. Existing keys: {existing_keys}"
@@ -128,7 +150,9 @@ class WorkflowNotFound(SkyvernHTTPException):
             workflow_repr = f"workflow_id={workflow_id}"
         if workflow_permanent_id:
             if version:
-                workflow_repr = f"workflow_permanent_id={workflow_permanent_id}, version={version}"
+                workflow_repr = (
+                    f"workflow_permanent_id={workflow_permanent_id}, version={version}"
+                )
             else:
                 workflow_repr = f"workflow_permanent_id={workflow_permanent_id}"
 
@@ -144,7 +168,9 @@ class WorkflowRunNotFound(SkyvernException):
 
 
 class MissingValueForParameter(SkyvernHTTPException):
-    def __init__(self, parameter_key: str, workflow_id: str, workflow_run_id: str) -> None:
+    def __init__(
+        self, parameter_key: str, workflow_id: str, workflow_run_id: str
+    ) -> None:
         super().__init__(
             f"Missing value for parameter {parameter_key} in workflow run {workflow_run_id} of workflow {workflow_id}"
         )
@@ -162,21 +188,27 @@ class FailedToNavigateToUrl(SkyvernException):
     def __init__(self, url: str, error_message: str) -> None:
         self.url = url
         self.error_message = error_message
-        super().__init__(f"Failed to navigate to url {url}. Error message: {error_message}")
+        super().__init__(
+            f"Failed to navigate to url {url}. Error message: {error_message}"
+        )
 
 
 class FailedToReloadPage(SkyvernException):
     def __init__(self, url: str, error_message: str) -> None:
         self.url = url
         self.error_message = error_message
-        super().__init__(f"Failed to reload page url {url}. Error message: {error_message}")
+        super().__init__(
+            f"Failed to reload page url {url}. Error message: {error_message}"
+        )
 
 
 class FailedToStopLoadingPage(SkyvernException):
     def __init__(self, url: str, error_message: str) -> None:
         self.url = url
         self.error_message = error_message
-        super().__init__(f"Failed to stop loading page url {url}. Error message: {error_message}")
+        super().__init__(
+            f"Failed to stop loading page url {url}. Error message: {error_message}"
+        )
 
 
 class UnexpectedTaskStatus(SkyvernException):
@@ -186,7 +218,9 @@ class UnexpectedTaskStatus(SkyvernException):
 
 class InvalidWorkflowTaskURLState(SkyvernException):
     def __init__(self, workflow_run_id: str) -> None:
-        super().__init__(f"No Valid URL found in the first task of workflow run {workflow_run_id}")
+        super().__init__(
+            f"No Valid URL found in the first task of workflow run {workflow_run_id}"
+        )
 
 
 class DisabledFeature(SkyvernException):
@@ -220,7 +254,9 @@ class OrganizationNotFound(SkyvernHTTPException):
 
 
 class StepNotFound(SkyvernHTTPException):
-    def __init__(self, organization_id: str, task_id: str, step_id: str | None = None) -> None:
+    def __init__(
+        self, organization_id: str, task_id: str, step_id: str | None = None
+    ) -> None:
         super().__init__(
             f"Step {step_id or 'latest'} not found. organization_id={organization_id} task_id={task_id}",
             status_code=status.HTTP_404_NOT_FOUND,
@@ -239,13 +275,17 @@ class EmptyScrapePage(SkyvernException):
 
 class WorkflowRunContextNotInitialized(SkyvernException):
     def __init__(self, workflow_run_id: str) -> None:
-        super().__init__(f"WorkflowRunContext not initialized for workflow run {workflow_run_id}")
+        super().__init__(
+            f"WorkflowRunContext not initialized for workflow run {workflow_run_id}"
+        )
 
 
 class DownloadFileMaxSizeExceeded(SkyvernException):
     def __init__(self, max_size: int) -> None:
         self.max_size = max_size
-        super().__init__(f"Download file size exceeded the maximum allowed size of {max_size} MB.")
+        super().__init__(
+            f"Download file size exceeded the maximum allowed size of {max_size} MB."
+        )
 
 
 class BitwardenBaseError(SkyvernException):
@@ -299,17 +339,23 @@ class UnknownElementTreeFormat(SkyvernException):
 
 class StepTerminationError(SkyvernException):
     def __init__(self, step_id: str, reason: str) -> None:
-        super().__init__(f"Step {step_id} cannot be executed and task is failed. Reason: {reason}")
+        super().__init__(
+            f"Step {step_id} cannot be executed and task is failed. Reason: {reason}"
+        )
 
 
 class StepUnableToExecuteError(SkyvernException):
     def __init__(self, step_id: str, reason: str) -> None:
-        super().__init__(f"Step {step_id} cannot be executed and task execution is stopped. Reason: {reason}")
+        super().__init__(
+            f"Step {step_id} cannot be executed and task execution is stopped. Reason: {reason}"
+        )
 
 
 class SVGConversionFailed(SkyvernException):
     def __init__(self, svg_html: str) -> None:
-        super().__init__(f"Failed to convert SVG after max retries. svg_html={svg_html}")
+        super().__init__(
+            f"Failed to convert SVG after max retries. svg_html={svg_html}"
+        )
 
 
 class UnsupportedActionType(SkyvernException):
@@ -319,7 +365,9 @@ class UnsupportedActionType(SkyvernException):
 
 class InvalidElementForTextInput(SkyvernException):
     def __init__(self, element_id: str, tag_name: str):
-        super().__init__(f"The {tag_name} element with id={element_id} doesn't support text input.")
+        super().__init__(
+            f"The {tag_name} element with id={element_id} doesn't support text input."
+        )
 
 
 class ElementIsNotLabel(SkyvernException):
@@ -339,12 +387,16 @@ class MissingElementDict(SkyvernException):
 
 class MissingElementInIframe(SkyvernException):
     def __init__(self, element_id: str) -> None:
-        super().__init__(f"Found no iframe includes the element. element_id={element_id}")
+        super().__init__(
+            f"Found no iframe includes the element. element_id={element_id}"
+        )
 
 
 class MissingElementInCSSMap(SkyvernException):
     def __init__(self, element_id: str) -> None:
-        super().__init__(f"Found no css selector in the CSS map for the element. element_id={element_id}")
+        super().__init__(
+            f"Found no css selector in the CSS map for the element. element_id={element_id}"
+        )
 
 
 class InputActionOnSelect2Dropdown(SkyvernException):
@@ -395,7 +447,9 @@ class TaskAlreadyCanceled(SkyvernHTTPException):
 
 class InvalidTaskStatusTransition(SkyvernHTTPException):
     def __init__(self, old_status: str, new_status: str, task_id: str):
-        super().__init__(f"Invalid task status transition from {old_status} to {new_status} for {task_id}")
+        super().__init__(
+            f"Invalid task status transition from {old_status} to {new_status} for {task_id}"
+        )
 
 
 class ErrFoundSelectableElement(SkyvernException):
@@ -407,12 +461,17 @@ class ErrFoundSelectableElement(SkyvernException):
 
 class NoSelectableElementFound(SkyvernException):
     def __init__(self, element_id: str):
-        super().__init__(f"No selectable elements found in the children list. element_id={element_id}")
+        super().__init__(
+            f"No selectable elements found in the children list. element_id={element_id}"
+        )
 
 
 class HttpException(SkyvernException):
     def __init__(self, status_code: int, url: str, msg: str | None = None) -> None:
-        super().__init__(f"HTTP Exception, status_code={status_code}, url={url}" + (f", msg={msg}" if msg else ""))
+        super().__init__(
+            f"HTTP Exception, status_code={status_code}, url={url}"
+            + (f", msg={msg}" if msg else "")
+        )
 
 
 class WrongElementToUploadFile(SkyvernException):
@@ -448,12 +507,16 @@ class NoElementMatchedForTargetOption(SkyvernException):
 
 class NoElementBoudingBox(SkyvernException):
     def __init__(self, element_id: str) -> None:
-        super().__init__(f"Element does not have a bounding box. element_id={element_id}")
+        super().__init__(
+            f"Element does not have a bounding box. element_id={element_id}"
+        )
 
 
 class NoIncrementalElementFoundForAutoCompletion(SkyvernException):
     def __init__(self, element_id: str, text: str) -> None:
-        super().__init__(f"No auto completion shown up after fill in [{text}]. element_id={element_id}")
+        super().__init__(
+            f"No auto completion shown up after fill in [{text}]. element_id={element_id}"
+        )
 
 
 class NoSuitableAutoCompleteOption(SkyvernException):
@@ -465,7 +528,11 @@ class NoSuitableAutoCompleteOption(SkyvernException):
 
 class NoAutoCompleteOptionMeetCondition(SkyvernException):
     def __init__(
-        self, reasoning: str | None, required_relevance: float, target_value: str, closest_relevance: float
+        self,
+        reasoning: str | None,
+        required_relevance: float,
+        target_value: str,
+        closest_relevance: float,
     ) -> None:
         super().__init__(
             f"No auto complete option meet the condition(relevance_float>{required_relevance}). reasoning={reasoning}, target_value={target_value}, closest_relevance={closest_relevance}"
@@ -500,7 +567,8 @@ class CachedActionPlanError(SkyvernException):
 class InvalidUrl(SkyvernHTTPException):
     def __init__(self, url: str) -> None:
         super().__init__(
-            f"Invalid URL: {url}. Skyvern supports HTTP and HTTPS urls.", status_code=status.HTTP_400_BAD_REQUEST
+            f"Invalid URL: {url}. Skyvern supports HTTP and HTTPS urls.",
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
 
@@ -513,7 +581,12 @@ class BlockedHost(SkyvernHTTPException):
 
 
 class InvalidWorkflowParameter(SkyvernHTTPException):
-    def __init__(self, expected_parameter_type: str, value: str, workflow_permanent_id: str | None = None) -> None:
+    def __init__(
+        self,
+        expected_parameter_type: str,
+        value: str,
+        workflow_permanent_id: str | None = None,
+    ) -> None:
         message = f"Invalid workflow parameter. Expected parameter type: {expected_parameter_type}. Value: {value}."
         if workflow_permanent_id:
             message += f" Workflow permanent id: {workflow_permanent_id}"

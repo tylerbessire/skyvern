@@ -21,7 +21,9 @@ async def aiohttp_get_json(
     raise_exception: bool = True,
     retry_timeout: float = 0,
 ) -> dict[str, Any]:
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as session:
+    async with aiohttp.ClientSession(
+        timeout=aiohttp.ClientTimeout(total=timeout)
+    ) as session:
         count = 0
         while count <= retry:
             try:
@@ -36,7 +38,9 @@ async def aiohttp_get_json(
                         return await response.json()
                     if raise_exception:
                         raise HttpException(response.status, url)
-                    LOG.error(f"Failed to fetch data from {url}", status_code=response.status)
+                    LOG.error(
+                        f"Failed to fetch data from {url}", status_code=response.status
+                    )
                     return {}
             except Exception:
                 if retry_timeout > 0:
@@ -56,7 +60,9 @@ async def aiohttp_get_text(
     raise_exception: bool = True,
     retry_timeout: float = 0,
 ) -> str:
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as session:
+    async with aiohttp.ClientSession(
+        timeout=aiohttp.ClientTimeout(total=timeout)
+    ) as session:
         count = 0
         while count <= retry:
             try:
@@ -71,7 +77,9 @@ async def aiohttp_get_text(
                         return await response.text()
                     if raise_exception:
                         raise HttpException(response.status, url)
-                    LOG.error(f"Failed to fetch data from {url}", status_code=response.status)
+                    LOG.error(
+                        f"Failed to fetch data from {url}", status_code=response.status
+                    )
                     return ""
             except Exception:
                 if retry_timeout > 0:
@@ -91,7 +99,9 @@ async def aiohttp_post(
     raise_exception: bool = True,
     retry_timeout: float = 0,
 ) -> dict[str, Any]:
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as session:
+    async with aiohttp.ClientSession(
+        timeout=aiohttp.ClientTimeout(total=timeout)
+    ) as session:
         count = 0
         while count <= retry:
             try:
@@ -107,7 +117,12 @@ async def aiohttp_post(
                         return await response.json()
                     if raise_exception:
                         raise HttpException(response.status, url)
-                    LOG.error("None 200 async post response", url=url, status_code=response.status, method="POST")
+                    LOG.error(
+                        "None 200 async post response",
+                        url=url,
+                        status_code=response.status,
+                        method="POST",
+                    )
                     return {}
             except Exception:
                 if retry_timeout > 0:

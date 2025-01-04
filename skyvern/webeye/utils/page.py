@@ -40,7 +40,9 @@ class SkyvernFrame:
         timeout: float = SettingsManager.get_settings().BROWSER_LOADING_TIMEOUT_MS,
     ) -> bytes:
         try:
-            await page.wait_for_load_state(timeout=SettingsManager.get_settings().BROWSER_LOADING_TIMEOUT_MS)
+            await page.wait_for_load_state(
+                timeout=SettingsManager.get_settings().BROWSER_LOADING_TIMEOUT_MS
+            )
             LOG.debug("Page is fully loaded, agent is about to take screenshots")
             start_time = time.time()
             screenshot: bytes = bytes()
@@ -88,12 +90,21 @@ class SkyvernFrame:
             # Checking max number of screenshots to prevent infinite loop
             # We are checking the difference between the old and new scroll_y_px to determine if we have reached the end of the
             # page. If the difference is less than 25, we assume we have reached the end of the page.
-            while abs(scroll_y_px_old - scroll_y_px) > 25 and len(screenshots) < max_number:
-                screenshot = await SkyvernFrame.take_screenshot(page=skyvern_page.frame, full_page=False)
+            while (
+                abs(scroll_y_px_old - scroll_y_px) > 25
+                and len(screenshots) < max_number
+            ):
+                screenshot = await SkyvernFrame.take_screenshot(
+                    page=skyvern_page.frame, full_page=False
+                )
                 screenshots.append(screenshot)
                 scroll_y_px_old = scroll_y_px
-                LOG.debug("Scrolling to next page", url=url, num_screenshots=len(screenshots))
-                scroll_y_px = await skyvern_page.scroll_to_next_page(draw_boxes=draw_boxes)
+                LOG.debug(
+                    "Scrolling to next page", url=url, num_screenshots=len(screenshots)
+                )
+                scroll_y_px = await skyvern_page.scroll_to_next_page(
+                    draw_boxes=draw_boxes
+                )
                 LOG.debug(
                     "Scrolled to next page",
                     scroll_y_px=scroll_y_px,
@@ -109,8 +120,12 @@ class SkyvernFrame:
             if draw_boxes:
                 await skyvern_page.build_elements_and_draw_bounding_boxes()
 
-            LOG.debug("Page is not scrollable", url=url, num_screenshots=len(screenshots))
-            screenshot = await SkyvernFrame.take_screenshot(page=skyvern_page.frame, full_page=False)
+            LOG.debug(
+                "Page is not scrollable", url=url, num_screenshots=len(screenshots)
+            )
+            screenshot = await SkyvernFrame.take_screenshot(
+                page=skyvern_page.frame, full_page=False
+            )
             screenshots.append(screenshot)
 
             if draw_boxes:
@@ -142,15 +157,21 @@ class SkyvernFrame:
         js_script = "([x, y]) => scrollToXY(x, y)"
         return await self.frame.evaluate(js_script, [x, y])
 
-    async def scroll_to_element_bottom(self, element: ElementHandle, page_by_page: bool = False) -> None:
-        js_script = "([element, page_by_page]) => scrollToElementBottom(element, page_by_page)"
+    async def scroll_to_element_bottom(
+        self, element: ElementHandle, page_by_page: bool = False
+    ) -> None:
+        js_script = (
+            "([element, page_by_page]) => scrollToElementBottom(element, page_by_page)"
+        )
         return await self.frame.evaluate(js_script, [element, page_by_page])
 
     async def scroll_to_element_top(self, element: ElementHandle) -> None:
         js_script = "(element) => scrollToElementTop(element)"
         return await self.frame.evaluate(js_script, element)
 
-    async def parse_element_from_html(self, frame: str, element: ElementHandle, interactable: bool) -> Dict:
+    async def parse_element_from_html(
+        self, frame: str, element: ElementHandle, interactable: bool
+    ) -> Dict:
         js_script = "([frame, element, interactable]) => buildElementObject(frame, element, interactable)"
         return await self.frame.evaluate(js_script, [frame, element, interactable])
 

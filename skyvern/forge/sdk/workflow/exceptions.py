@@ -77,7 +77,9 @@ class InvalidWorkflowDefinition(BaseWorkflowHTTPException):
 
 class InvalidEmailClientConfiguration(BaseWorkflowException):
     def __init__(self, problems: list[str]) -> None:
-        super().__init__(f"Email client configuration is invalid. These parameters are missing or invalid: {problems}")
+        super().__init__(
+            f"Email client configuration is invalid. These parameters are missing or invalid: {problems}"
+        )
 
 
 class NoValidEmailRecipient(BaseWorkflowException):
@@ -102,7 +104,12 @@ class InvalidFileType(BaseWorkflowHTTPException):
 
 
 class WorkflowParameterMissingRequiredValue(BaseWorkflowHTTPException):
-    def __init__(self, workflow_parameter_type: str, workflow_parameter_key: str, required_value: str) -> None:
+    def __init__(
+        self,
+        workflow_parameter_type: str,
+        workflow_parameter_key: str,
+        required_value: str,
+    ) -> None:
         super().__init__(
             f"Missing required value for workflow parameter. Workflow parameter type: {workflow_parameter_type}. workflow_parameter_key: {workflow_parameter_key}. Required value: {required_value}",
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -37,7 +37,9 @@ class PromptEngine:
     Class to handle loading and populating Jinja2 templates for prompts.
     """
 
-    def __init__(self, model: str, prompts_dir: Path = SKYVERN_DIR / "forge" / "prompts") -> None:
+    def __init__(
+        self, model: str, prompts_dir: Path = SKYVERN_DIR / "forge" / "prompts"
+    ) -> None:
         """
         Initialize the PromptEngine with the specified model.
 

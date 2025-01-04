@@ -16,7 +16,9 @@ class SkyvernClient:
         self.base_url = base_url
         self.credentials = credentials
 
-    def generate_curl_params(self, task_request_body: TaskRequest, max_steps: int | None = None) -> PreparedRequest:
+    def generate_curl_params(
+        self, task_request_body: TaskRequest, max_steps: int | None = None
+    ) -> PreparedRequest:
         url = f"{self.base_url}/tasks"
         payload = task_request_body.model_dump()
         headers = {
@@ -28,8 +30,12 @@ class SkyvernClient:
 
         return url, payload, headers
 
-    def create_task(self, task_request_body: TaskRequest, max_steps: int | None = None) -> str | None:
-        url, payload, headers = self.generate_curl_params(task_request_body, max_steps=max_steps)
+    def create_task(
+        self, task_request_body: TaskRequest, max_steps: int | None = None
+    ) -> str | None:
+        url, payload, headers = self.generate_curl_params(
+            task_request_body, max_steps=max_steps
+        )
 
         response = requests.post(url, headers=headers, data=json.dumps(payload))
         if "task_id" not in response.json():
@@ -40,7 +46,9 @@ class SkyvernClient:
     def copy_curl(self, task_request_body: TaskRequest) -> str:
         url, payload, headers = self.generate_curl_params(task_request_body)
 
-        req = requests.Request("POST", url, headers=headers, data=json.dumps(payload, indent=4))
+        req = requests.Request(
+            "POST", url, headers=headers, data=json.dumps(payload, indent=4)
+        )
 
         return curlify.to_curl(req.prepare())
 
@@ -61,7 +69,9 @@ class SkyvernClient:
         response = requests.get(url, params=params, headers=headers)
         return response.json()
 
-    def get_agent_task_steps(self, task_id: str, page: int = 1, page_size: int = 15) -> list[dict[str, Any]]:
+    def get_agent_task_steps(
+        self, task_id: str, page: int = 1, page_size: int = 15
+    ) -> list[dict[str, Any]]:
         """Get all steps for a task with pagination."""
         url = f"{self.base_url}/tasks/{task_id}/steps"
         params = {"page": page, "page_size": page_size}
@@ -75,7 +85,9 @@ class SkyvernClient:
                 and "actions_and_results" in step["output"]
                 and step["output"]["actions_and_results"] is not None
             ):
-                step["output"]["actions_and_results"] = json.dumps(step["output"]["actions_and_results"])
+                step["output"]["actions_and_results"] = json.dumps(
+                    step["output"]["actions_and_results"]
+                )
         return steps
 
     def get_agent_task_video_artifact(self, task_id: str) -> dict[str, Any] | None:

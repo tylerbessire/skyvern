@@ -31,7 +31,9 @@ class WorkflowRunContext:
 
     def __init__(
         self,
-        workflow_parameter_tuples: list[tuple[WorkflowParameter, "WorkflowRunParameter"]],
+        workflow_parameter_tuples: list[
+            tuple[WorkflowParameter, "WorkflowRunParameter"]
+        ],
         workflow_output_parameters: list[OutputParameter],
         context_parameters: list[ContextParameter],
     ) -> None:
@@ -124,13 +126,19 @@ class WorkflowRunContext:
         organization: Organization,
     ) -> None:
         if parameter.parameter_type == ParameterType.WORKFLOW:
-            LOG.error(f"Workflow parameters are set while initializing context manager. Parameter key: {parameter.key}")
+            LOG.error(
+                f"Workflow parameters are set while initializing context manager. Parameter key: {parameter.key}"
+            )
             raise ValueError(
                 f"Workflow parameters are set while initializing context manager. Parameter key: {parameter.key}"
             )
         elif parameter.parameter_type == ParameterType.OUTPUT:
-            LOG.error(f"Output parameters are set after each block execution. Parameter key: {parameter.key}")
-            raise ValueError(f"Output parameters are set after each block execution. Parameter key: {parameter.key}")
+            LOG.error(
+                f"Output parameters are set after each block execution. Parameter key: {parameter.key}"
+            )
+            raise ValueError(
+                f"Output parameters are set after each block execution. Parameter key: {parameter.key}"
+            )
         elif parameter.parameter_type == ParameterType.AWS_SECRET:
             # If the parameter is an AWS secret, fetch the secret value and store it in the secrets dict
             # The value of the parameter will be the random secret id with format `secret_<uuid>`.
@@ -143,24 +151,38 @@ class WorkflowRunContext:
         elif parameter.parameter_type == ParameterType.BITWARDEN_LOGIN_CREDENTIAL:
             try:
                 # Get the Bitwarden login credentials from AWS secrets
-                client_id = await aws_client.get_secret(parameter.bitwarden_client_id_aws_secret_key)
-                client_secret = await aws_client.get_secret(parameter.bitwarden_client_secret_aws_secret_key)
-                master_password = await aws_client.get_secret(parameter.bitwarden_master_password_aws_secret_key)
+                client_id = await aws_client.get_secret(
+                    parameter.bitwarden_client_id_aws_secret_key
+                )
+                client_secret = await aws_client.get_secret(
+                    parameter.bitwarden_client_secret_aws_secret_key
+                )
+                master_password = await aws_client.get_secret(
+                    parameter.bitwarden_master_password_aws_secret_key
+                )
             except Exception as e:
-                LOG.error(f"Failed to get Bitwarden login credentials from AWS secrets. Error: {e}")
+                LOG.error(
+                    f"Failed to get Bitwarden login credentials from AWS secrets. Error: {e}"
+                )
                 raise e
 
-            if self.has_parameter(parameter.url_parameter_key) and self.has_value(parameter.url_parameter_key):
+            if self.has_parameter(parameter.url_parameter_key) and self.has_value(
+                parameter.url_parameter_key
+            ):
                 url = self.values[parameter.url_parameter_key]
             else:
-                LOG.error(f"URL parameter {parameter.url_parameter_key} not found or has no value")
-                raise ValueError("URL parameter for Bitwarden login credentials not found or has no value")
+                LOG.error(
+                    f"URL parameter {parameter.url_parameter_key} not found or has no value"
+                )
+                raise ValueError(
+                    "URL parameter for Bitwarden login credentials not found or has no value"
+                )
 
             collection_id = None
             if parameter.bitwarden_collection_id:
-                if self.has_parameter(parameter.bitwarden_collection_id) and self.has_value(
+                if self.has_parameter(
                     parameter.bitwarden_collection_id
-                ):
+                ) and self.has_value(parameter.bitwarden_collection_id):
                     collection_id = self.values[parameter.bitwarden_collection_id]
                 else:
                     collection_id = parameter.bitwarden_collection_id
@@ -176,27 +198,40 @@ class WorkflowRunContext:
                     collection_id=collection_id,
                 )
                 if secret_credentials:
-                    self.secrets[BitwardenConstants.BW_ORGANIZATION_ID] = organization.bw_organization_id
-                    self.secrets[BitwardenConstants.BW_COLLECTION_IDS] = organization.bw_collection_ids
+                    self.secrets[BitwardenConstants.BW_ORGANIZATION_ID] = (
+                        organization.bw_organization_id
+                    )
+                    self.secrets[BitwardenConstants.BW_COLLECTION_IDS] = (
+                        organization.bw_collection_ids
+                    )
                     self.secrets[BitwardenConstants.URL] = url
                     self.secrets[BitwardenConstants.CLIENT_SECRET] = client_secret
                     self.secrets[BitwardenConstants.CLIENT_ID] = client_id
                     self.secrets[BitwardenConstants.MASTER_PASSWORD] = master_password
-                    self.secrets[BitwardenConstants.BW_COLLECTION_ID] = parameter.bitwarden_collection_id
+                    self.secrets[BitwardenConstants.BW_COLLECTION_ID] = (
+                        parameter.bitwarden_collection_id
+                    )
 
                     random_secret_id = self.generate_random_secret_id()
                     # username secret
                     username_secret_id = f"{random_secret_id}_username"
-                    self.secrets[username_secret_id] = secret_credentials[BitwardenConstants.USERNAME]
+                    self.secrets[username_secret_id] = secret_credentials[
+                        BitwardenConstants.USERNAME
+                    ]
                     # password secret
                     password_secret_id = f"{random_secret_id}_password"
-                    self.secrets[password_secret_id] = secret_credentials[BitwardenConstants.PASSWORD]
+                    self.secrets[password_secret_id] = secret_credentials[
+                        BitwardenConstants.PASSWORD
+                    ]
                     self.values[parameter.key] = {
                         "username": username_secret_id,
                         "password": password_secret_id,
                     }
 
-                    if BitwardenConstants.TOTP in secret_credentials and secret_credentials[BitwardenConstants.TOTP]:
+                    if (
+                        BitwardenConstants.TOTP in secret_credentials
+                        and secret_credentials[BitwardenConstants.TOTP]
+                    ):
                         totp_secret_id = f"{random_secret_id}_totp"
                         self.secrets[totp_secret_id] = BitwardenConstants.TOTP
                         self.values[parameter.key]["totp"] = totp_secret_id
@@ -207,11 +242,19 @@ class WorkflowRunContext:
         elif parameter.parameter_type == ParameterType.BITWARDEN_SENSITIVE_INFORMATION:
             try:
                 # Get the Bitwarden login credentials from AWS secrets
-                client_id = await aws_client.get_secret(parameter.bitwarden_client_id_aws_secret_key)
-                client_secret = await aws_client.get_secret(parameter.bitwarden_client_secret_aws_secret_key)
-                master_password = await aws_client.get_secret(parameter.bitwarden_master_password_aws_secret_key)
+                client_id = await aws_client.get_secret(
+                    parameter.bitwarden_client_id_aws_secret_key
+                )
+                client_secret = await aws_client.get_secret(
+                    parameter.bitwarden_client_secret_aws_secret_key
+                )
+                master_password = await aws_client.get_secret(
+                    parameter.bitwarden_master_password_aws_secret_key
+                )
             except Exception as e:
-                LOG.error(f"Failed to get Bitwarden login credentials from AWS secrets. Error: {e}")
+                LOG.error(
+                    f"Failed to get Bitwarden login credentials from AWS secrets. Error: {e}"
+                )
                 raise e
 
             bitwarden_identity_key = parameter.bitwarden_identity_key
@@ -227,20 +270,28 @@ class WorkflowRunContext:
                 collection_id = self.values[parameter.bitwarden_collection_id]
 
             try:
-                sensitive_values = await BitwardenService.get_sensitive_information_from_identity(
-                    client_id,
-                    client_secret,
-                    master_password,
-                    organization.bw_organization_id,
-                    organization.bw_collection_ids,
-                    collection_id,
-                    bitwarden_identity_key,
-                    parameter.bitwarden_identity_fields,
+                sensitive_values = (
+                    await BitwardenService.get_sensitive_information_from_identity(
+                        client_id,
+                        client_secret,
+                        master_password,
+                        organization.bw_organization_id,
+                        organization.bw_collection_ids,
+                        collection_id,
+                        bitwarden_identity_key,
+                        parameter.bitwarden_identity_fields,
+                    )
                 )
                 if sensitive_values:
-                    self.secrets[BitwardenConstants.BW_ORGANIZATION_ID] = organization.bw_organization_id
-                    self.secrets[BitwardenConstants.BW_COLLECTION_IDS] = organization.bw_collection_ids
-                    self.secrets[BitwardenConstants.IDENTITY_KEY] = bitwarden_identity_key
+                    self.secrets[BitwardenConstants.BW_ORGANIZATION_ID] = (
+                        organization.bw_organization_id
+                    )
+                    self.secrets[BitwardenConstants.BW_COLLECTION_IDS] = (
+                        organization.bw_collection_ids
+                    )
+                    self.secrets[BitwardenConstants.IDENTITY_KEY] = (
+                        bitwarden_identity_key
+                    )
                     self.secrets[BitwardenConstants.CLIENT_SECRET] = client_secret
                     self.secrets[BitwardenConstants.CLIENT_ID] = client_id
                     self.secrets[BitwardenConstants.MASTER_PASSWORD] = master_password
@@ -254,19 +305,31 @@ class WorkflowRunContext:
                         self.values[parameter.key][key] = secret_id
 
             except BitwardenBaseError as e:
-                LOG.error(f"Failed to get sensitive information from Bitwarden. Error: {e}")
+                LOG.error(
+                    f"Failed to get sensitive information from Bitwarden. Error: {e}"
+                )
                 raise e
         elif parameter.parameter_type == ParameterType.BITWARDEN_CREDIT_CARD_DATA:
             try:
                 # Get the Bitwarden login credentials from AWS secrets
-                client_id = await aws_client.get_secret(parameter.bitwarden_client_id_aws_secret_key)
-                client_secret = await aws_client.get_secret(parameter.bitwarden_client_secret_aws_secret_key)
-                master_password = await aws_client.get_secret(parameter.bitwarden_master_password_aws_secret_key)
+                client_id = await aws_client.get_secret(
+                    parameter.bitwarden_client_id_aws_secret_key
+                )
+                client_secret = await aws_client.get_secret(
+                    parameter.bitwarden_client_secret_aws_secret_key
+                )
+                master_password = await aws_client.get_secret(
+                    parameter.bitwarden_master_password_aws_secret_key
+                )
             except Exception as e:
-                LOG.error(f"Failed to get Bitwarden login credentials from AWS secrets. Error: {e}")
+                LOG.error(
+                    f"Failed to get Bitwarden login credentials from AWS secrets. Error: {e}"
+                )
                 raise e
 
-            if self.has_parameter(parameter.bitwarden_item_id) and self.has_value(parameter.bitwarden_item_id):
+            if self.has_parameter(parameter.bitwarden_item_id) and self.has_value(
+                parameter.bitwarden_item_id
+            ):
                 item_id = self.values[parameter.bitwarden_item_id]
             else:
                 item_id = parameter.bitwarden_item_id
@@ -309,7 +372,8 @@ class WorkflowRunContext:
                 }
 
                 parameter_value: dict[str, Any] = {
-                    field_name: credit_card_data[field_key] for field_key, field_name in pass_through_fields.items()
+                    field_name: credit_card_data[field_key]
+                    for field_key, field_name in pass_through_fields.items()
                 }
 
                 for data_key, secret_suffix in fields_to_obfuscate.items():
@@ -328,7 +392,9 @@ class WorkflowRunContext:
                 # TODO (kerem): set this while initializing the context manager
                 workflow_parameter_value = self.get_value(parameter.source.key)
                 if not isinstance(workflow_parameter_value, dict):
-                    raise ValueError(f"ContextParameter source value is not a dict. Parameter key: {parameter.key}")
+                    raise ValueError(
+                        f"ContextParameter source value is not a dict. Parameter key: {parameter.key}"
+                    )
                 parameter.value = workflow_parameter_value.get(parameter.source.key)
                 self.parameters[parameter.key] = parameter
                 self.values[parameter.key] = parameter.value
@@ -336,7 +402,9 @@ class WorkflowRunContext:
                 # TODO (kerem): update this anytime the source parameter value changes in values dict
                 context_parameter_value = self.get_value(parameter.source.key)
                 if not isinstance(context_parameter_value, dict):
-                    raise ValueError(f"ContextParameter source value is not a dict. Parameter key: {parameter.key}")
+                    raise ValueError(
+                        f"ContextParameter source value is not a dict. Parameter key: {parameter.key}"
+                    )
                 parameter.value = context_parameter_value.get(parameter.source.key)
                 self.parameters[parameter.key] = parameter
                 self.values[parameter.key] = parameter.value
@@ -356,10 +424,14 @@ class WorkflowRunContext:
         self, parameter: OutputParameter, value: dict[str, Any] | list | str | None
     ) -> None:
         if parameter.key in self.values:
-            LOG.warning(f"Output parameter {parameter.output_parameter_id} already has a registered value, overwriting")
+            LOG.warning(
+                f"Output parameter {parameter.output_parameter_id} already has a registered value, overwriting"
+            )
 
         self.values[parameter.key] = value
-        await self.set_parameter_values_for_output_parameter_dependent_blocks(parameter, value)
+        await self.set_parameter_values_for_output_parameter_dependent_blocks(
+            parameter, value
+        )
 
     async def set_parameter_values_for_output_parameter_dependent_blocks(
         self,
@@ -423,7 +495,11 @@ class WorkflowRunContext:
                 isinstance(x, ContextParameter),
                 # This makes sure that ContextParameters witha ContextParameter source are processed after all other
                 # ContextParameters
-                (isinstance(x.source, ContextParameter) if isinstance(x, ContextParameter) else False),
+                (
+                    isinstance(x.source, ContextParameter)
+                    if isinstance(x, ContextParameter)
+                    else False
+                ),
                 isinstance(x, BitwardenLoginCredentialParameter),
             )
         )
@@ -466,13 +542,17 @@ class WorkflowContextManager:
 
     def _validate_workflow_run_context(self, workflow_run_id: str) -> None:
         if workflow_run_id not in self.workflow_run_contexts:
-            LOG.error(f"WorkflowRunContext not initialized for workflow run {workflow_run_id}")
+            LOG.error(
+                f"WorkflowRunContext not initialized for workflow run {workflow_run_id}"
+            )
             raise WorkflowRunContextNotInitialized(workflow_run_id=workflow_run_id)
 
     def initialize_workflow_run_context(
         self,
         workflow_run_id: str,
-        workflow_parameter_tuples: list[tuple[WorkflowParameter, "WorkflowRunParameter"]],
+        workflow_parameter_tuples: list[
+            tuple[WorkflowParameter, "WorkflowRunParameter"]
+        ],
         workflow_output_parameters: list[OutputParameter],
         context_parameters: list[ContextParameter],
     ) -> WorkflowRunContext:

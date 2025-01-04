@@ -87,12 +87,22 @@ class WorkflowService:
             version=version,
         )
         if workflow is None:
-            LOG.error(f"Workflow {workflow_permanent_id} not found", workflow_version=version)
-            raise WorkflowNotFound(workflow_permanent_id=workflow_permanent_id, version=version)
+            LOG.error(
+                f"Workflow {workflow_permanent_id} not found", workflow_version=version
+            )
+            raise WorkflowNotFound(
+                workflow_permanent_id=workflow_permanent_id, version=version
+            )
         workflow_id = workflow.workflow_id
-        if workflow_request.proxy_location is None and workflow.proxy_location is not None:
+        if (
+            workflow_request.proxy_location is None
+            and workflow.proxy_location is not None
+        ):
             workflow_request.proxy_location = workflow.proxy_location
-        if workflow_request.webhook_callback_url is None and workflow.webhook_callback_url is not None:
+        if (
+            workflow_request.webhook_callback_url is None
+            and workflow.webhook_callback_url is not None
+        ):
             workflow_request.webhook_callback_url = workflow.webhook_callback_url
         # Create the workflow run and set skyvern context
         workflow_run = await self.create_workflow_run(
@@ -120,10 +130,15 @@ class WorkflowService:
         )
 
         # Create all the workflow run parameters, AWSSecretParameter won't have workflow run parameters created.
-        all_workflow_parameters = await self.get_workflow_parameters(workflow_id=workflow.workflow_id)
+        all_workflow_parameters = await self.get_workflow_parameters(
+            workflow_id=workflow.workflow_id
+        )
         try:
             for workflow_parameter in all_workflow_parameters:
-                if workflow_request.data and workflow_parameter.key in workflow_request.data:
+                if (
+                    workflow_request.data
+                    and workflow_parameter.key in workflow_request.data
+                ):
                     request_body_value = workflow_request.data[workflow_parameter.key]
                     await self.create_workflow_run_parameter(
                         workflow_run_id=workflow_run.workflow_run_id,
@@ -147,7 +162,9 @@ class WorkflowService:
                 f"Error while setting up workflow run {workflow_run.workflow_run_id}",
                 workflow_run_id=workflow_run.workflow_run_id,
             )
-            await self.mark_workflow_run_as_failed(workflow_run_id=workflow_run.workflow_run_id)
+            await self.mark_workflow_run_as_failed(
+                workflow_run_id=workflow_run.workflow_run_id
+            )
             raise e
 
         return workflow_run
@@ -161,10 +178,14 @@ class WorkflowService:
         """Execute a workflow."""
         organization_id = organization.organization_id
         workflow_run = await self.get_workflow_run(workflow_run_id=workflow_run_id)
-        workflow = await self.get_workflow(workflow_id=workflow_run.workflow_id, organization_id=organization_id)
+        workflow = await self.get_workflow(
+            workflow_id=workflow_run.workflow_id, organization_id=organization_id
+        )
 
         # Set workflow run status to running, create workflow run parameters
-        await self.mark_workflow_run_as_running(workflow_run_id=workflow_run.workflow_run_id)
+        await self.mark_workflow_run_as_running(
+            workflow_run_id=workflow_run.workflow_run_id
+        )
 
         # Get all context parameters from the workflow definition
         context_parameters = [
@@ -173,8 +194,12 @@ class WorkflowService:
             if isinstance(parameter, ContextParameter)
         ]
         # Get all <workflow parameter, workflow run parameter> tuples
-        wp_wps_tuples = await self.get_workflow_run_parameter_tuples(workflow_run_id=workflow_run.workflow_run_id)
-        workflow_output_parameters = await self.get_workflow_output_parameters(workflow_id=workflow.workflow_id)
+        wp_wps_tuples = await self.get_workflow_run_parameter_tuples(
+            workflow_run_id=workflow_run.workflow_run_id
+        )
+        workflow_output_parameters = await self.get_workflow_output_parameters(
+            workflow_id=workflow.workflow_id
+        )
         app.WORKFLOW_CONTEXT_MANAGER.initialize_workflow_run_context(
             workflow_run_id,
             wp_wps_tuples,
@@ -205,7 +230,9 @@ class WorkflowService:
                         block_idx=block_idx,
                         block_result=block_result,
                     )
-                    await self.mark_workflow_run_as_canceled(workflow_run_id=workflow_run.workflow_run_id)
+                    await self.mark_workflow_run_as_canceled(
+                        workflow_run_id=workflow_run.workflow_run_id
+                    )
                     # We're not sending a webhook here because the workflow run is manually marked as canceled.
                     return workflow_run
                 elif block_result.status == BlockStatus.failed:
@@ -226,7 +253,9 @@ class WorkflowService:
                             continue_on_failure=block.continue_on_failure,
                         )
                     else:
-                        await self.mark_workflow_run_as_failed(workflow_run_id=workflow_run.workflow_run_id)
+                        await self.mark_workflow_run_as_failed(
+                            workflow_run_id=workflow_run.workflow_run_id
+                        )
                         await self.send_workflow_response(
                             workflow=workflow,
                             workflow_run=workflow_run,
@@ -251,7 +280,9 @@ class WorkflowService:
                             continue_on_failure=block.continue_on_failure,
                         )
                     else:
-                        await self.mark_workflow_run_as_terminated(workflow_run_id=workflow_run.workflow_run_id)
+                        await self.mark_workflow_run_as_terminated(
+                            workflow_run_id=workflow_run.workflow_run_id
+                        )
                         await self.send_workflow_response(
                             workflow=workflow,
                             workflow_run=workflow_run,
@@ -263,12 +294,20 @@ class WorkflowService:
                     f"Error while executing workflow run {workflow_run.workflow_run_id}",
                     workflow_run_id=workflow_run.workflow_run_id,
                 )
-                await self.mark_workflow_run_as_failed(workflow_run_id=workflow_run.workflow_run_id)
-                await self.send_workflow_response(workflow=workflow, workflow_run=workflow_run, api_key=api_key)
+                await self.mark_workflow_run_as_failed(
+                    workflow_run_id=workflow_run.workflow_run_id
+                )
+                await self.send_workflow_response(
+                    workflow=workflow, workflow_run=workflow_run, api_key=api_key
+                )
                 return workflow_run
 
-        await self.mark_workflow_run_as_completed(workflow_run_id=workflow_run.workflow_run_id)
-        await self.send_workflow_response(workflow=workflow, workflow_run=workflow_run, api_key=api_key)
+        await self.mark_workflow_run_as_completed(
+            workflow_run_id=workflow_run.workflow_run_id
+        )
+        await self.send_workflow_response(
+            workflow=workflow, workflow_run=workflow_run, api_key=api_key
+        )
         return workflow_run
 
     async def create_workflow(
@@ -301,8 +340,12 @@ class WorkflowService:
             is_saved_task=is_saved_task,
         )
 
-    async def get_workflow(self, workflow_id: str, organization_id: str | None = None) -> Workflow:
-        workflow = await app.DATABASE.get_workflow(workflow_id=workflow_id, organization_id=organization_id)
+    async def get_workflow(
+        self, workflow_id: str, organization_id: str | None = None
+    ) -> Workflow:
+        workflow = await app.DATABASE.get_workflow(
+            workflow_id=workflow_id, organization_id=organization_id
+        )
         if not workflow:
             raise WorkflowNotFound(workflow_id=workflow_id)
         return workflow
@@ -321,7 +364,9 @@ class WorkflowService:
             exclude_deleted=exclude_deleted,
         )
         if not workflow:
-            raise WorkflowNotFound(workflow_permanent_id=workflow_permanent_id, version=version)
+            raise WorkflowNotFound(
+                workflow_permanent_id=workflow_permanent_id, version=version
+            )
         return workflow
 
     async def get_workflows_by_organization_id(
@@ -359,7 +404,9 @@ class WorkflowService:
             title=title,
             organization_id=organization_id,
             description=description,
-            workflow_definition=(workflow_definition.model_dump() if workflow_definition else None),
+            workflow_definition=(
+                workflow_definition.model_dump() if workflow_definition else None
+            ),
         )
 
     async def delete_workflow_by_permanent_id(
@@ -382,11 +429,19 @@ class WorkflowService:
             organization_id=organization_id,
         )
 
-    async def get_workflow_runs(self, organization_id: str, page: int = 1, page_size: int = 10) -> list[WorkflowRun]:
-        return await app.DATABASE.get_workflow_runs(organization_id=organization_id, page=page, page_size=page_size)
+    async def get_workflow_runs(
+        self, organization_id: str, page: int = 1, page_size: int = 10
+    ) -> list[WorkflowRun]:
+        return await app.DATABASE.get_workflow_runs(
+            organization_id=organization_id, page=page, page_size=page_size
+        )
 
     async def get_workflow_runs_for_workflow_permanent_id(
-        self, workflow_permanent_id: str, organization_id: str, page: int = 1, page_size: int = 10
+        self,
+        workflow_permanent_id: str,
+        organization_id: str,
+        page: int = 1,
+        page_size: int = 10,
     ) -> list[WorkflowRun]:
         return await app.DATABASE.get_workflow_runs_for_workflow_permanent_id(
             workflow_permanent_id=workflow_permanent_id,
@@ -396,7 +451,11 @@ class WorkflowService:
         )
 
     async def create_workflow_run(
-        self, workflow_request: WorkflowRequestBody, workflow_permanent_id: str, workflow_id: str, organization_id: str
+        self,
+        workflow_request: WorkflowRequestBody,
+        workflow_permanent_id: str,
+        workflow_id: str,
+        organization_id: str,
     ) -> WorkflowRun:
         return await app.DATABASE.create_workflow_run(
             workflow_permanent_id=workflow_permanent_id,
@@ -464,7 +523,9 @@ class WorkflowService:
         )
 
     async def get_workflow_run(self, workflow_run_id: str) -> WorkflowRun:
-        workflow_run = await app.DATABASE.get_workflow_run(workflow_run_id=workflow_run_id)
+        workflow_run = await app.DATABASE.get_workflow_run(
+            workflow_run_id=workflow_run_id
+        )
         if not workflow_run:
             raise WorkflowRunNotFound(workflow_run_id)
         return workflow_run
@@ -563,9 +624,13 @@ class WorkflowService:
     async def create_output_parameter(
         self, workflow_id: str, key: str, description: str | None = None
     ) -> OutputParameter:
-        return await app.DATABASE.create_output_parameter(workflow_id=workflow_id, key=key, description=description)
+        return await app.DATABASE.create_output_parameter(
+            workflow_id=workflow_id, key=key, description=description
+        )
 
-    async def get_workflow_parameters(self, workflow_id: str) -> list[WorkflowParameter]:
+    async def get_workflow_parameters(
+        self, workflow_id: str
+    ) -> list[WorkflowParameter]:
         return await app.DATABASE.get_workflow_parameters(workflow_id=workflow_id)
 
     async def create_workflow_run_parameter(
@@ -587,40 +652,55 @@ class WorkflowService:
     async def get_workflow_run_parameter_tuples(
         self, workflow_run_id: str
     ) -> list[tuple[WorkflowParameter, WorkflowRunParameter]]:
-        return await app.DATABASE.get_workflow_run_parameters(workflow_run_id=workflow_run_id)
+        return await app.DATABASE.get_workflow_run_parameters(
+            workflow_run_id=workflow_run_id
+        )
 
     @staticmethod
     async def get_workflow_output_parameters(workflow_id: str) -> list[OutputParameter]:
-        return await app.DATABASE.get_workflow_output_parameters(workflow_id=workflow_id)
+        return await app.DATABASE.get_workflow_output_parameters(
+            workflow_id=workflow_id
+        )
 
     @staticmethod
     async def get_workflow_run_output_parameters(
         workflow_run_id: str,
     ) -> list[WorkflowRunOutputParameter]:
-        return await app.DATABASE.get_workflow_run_output_parameters(workflow_run_id=workflow_run_id)
+        return await app.DATABASE.get_workflow_run_output_parameters(
+            workflow_run_id=workflow_run_id
+        )
 
     @staticmethod
     async def get_output_parameter_workflow_run_output_parameter_tuples(
         workflow_id: str,
         workflow_run_id: str,
     ) -> list[tuple[OutputParameter, WorkflowRunOutputParameter]]:
-        workflow_run_output_parameters = await app.DATABASE.get_workflow_run_output_parameters(
-            workflow_run_id=workflow_run_id
+        workflow_run_output_parameters = (
+            await app.DATABASE.get_workflow_run_output_parameters(
+                workflow_run_id=workflow_run_id
+            )
         )
-        output_parameters = await app.DATABASE.get_workflow_output_parameters(workflow_id=workflow_id)
+        output_parameters = await app.DATABASE.get_workflow_output_parameters(
+            workflow_id=workflow_id
+        )
 
         return [
             (output_parameter, workflow_run_output_parameter)
             for output_parameter in output_parameters
             for workflow_run_output_parameter in workflow_run_output_parameters
-            if output_parameter.output_parameter_id == workflow_run_output_parameter.output_parameter_id
+            if output_parameter.output_parameter_id
+            == workflow_run_output_parameter.output_parameter_id
         ]
 
     async def get_last_task_for_workflow_run(self, workflow_run_id: str) -> Task | None:
-        return await app.DATABASE.get_last_task_for_workflow_run(workflow_run_id=workflow_run_id)
+        return await app.DATABASE.get_last_task_for_workflow_run(
+            workflow_run_id=workflow_run_id
+        )
 
     async def get_tasks_by_workflow_run_id(self, workflow_run_id: str) -> list[Task]:
-        return await app.DATABASE.get_tasks_by_workflow_run_id(workflow_run_id=workflow_run_id)
+        return await app.DATABASE.get_tasks_by_workflow_run_id(
+            workflow_run_id=workflow_run_id
+        )
 
     async def build_workflow_run_status_response_by_workflow_id(
         self,
@@ -644,13 +724,17 @@ class WorkflowService:
         workflow_run_id: str,
         organization_id: str,
     ) -> WorkflowRunStatusResponse:
-        workflow = await self.get_workflow_by_permanent_id(workflow_permanent_id, organization_id=organization_id)
+        workflow = await self.get_workflow_by_permanent_id(
+            workflow_permanent_id, organization_id=organization_id
+        )
         if workflow is None:
             LOG.error(f"Workflow {workflow_permanent_id} not found")
             raise WorkflowNotFound(workflow_permanent_id=workflow_permanent_id)
 
         workflow_run = await self.get_workflow_run(workflow_run_id=workflow_run_id)
-        workflow_run_tasks = await app.DATABASE.get_tasks_by_workflow_run_id(workflow_run_id=workflow_run_id)
+        workflow_run_tasks = await app.DATABASE.get_tasks_by_workflow_run_id(
+            workflow_run_id=workflow_run_id
+        )
         screenshot_artifacts = []
         screenshot_urls: list[str] | None = None
         # get the last screenshot for the last 3 tasks of the workflow run
@@ -668,7 +752,9 @@ class WorkflowService:
             if len(screenshot_artifacts) >= 3:
                 break
         if screenshot_artifacts:
-            screenshot_urls = await app.ARTIFACT_MANAGER.get_share_links(screenshot_artifacts)
+            screenshot_urls = await app.ARTIFACT_MANAGER.get_share_links(
+                screenshot_artifacts
+            )
 
         recording_url = None
         recording_artifact = await app.DATABASE.get_artifact_for_workflow_run(
@@ -677,10 +763,16 @@ class WorkflowService:
             organization_id=organization_id,
         )
         if recording_artifact:
-            recording_url = await app.ARTIFACT_MANAGER.get_share_link(recording_artifact)
+            recording_url = await app.ARTIFACT_MANAGER.get_share_link(
+                recording_artifact
+            )
 
-        workflow_parameter_tuples = await app.DATABASE.get_workflow_run_parameters(workflow_run_id=workflow_run_id)
-        parameters_with_value = {wfp.key: wfrp.value for wfp, wfrp in workflow_parameter_tuples}
+        workflow_parameter_tuples = await app.DATABASE.get_workflow_run_parameters(
+            workflow_run_id=workflow_run_id
+        )
+        parameters_with_value = {
+            wfp.key: wfrp.value for wfp, wfrp in workflow_parameter_tuples
+        }
         output_parameter_tuples: list[
             tuple[OutputParameter, WorkflowRunOutputParameter]
         ] = await self.get_output_parameter_workflow_run_output_parameter_tuples(
@@ -689,7 +781,10 @@ class WorkflowService:
 
         outputs = None
         if output_parameter_tuples:
-            outputs = {output_parameter.key: output.value for output_parameter, output in output_parameter_tuples}
+            outputs = {
+                output_parameter.key: output.value
+                for output_parameter, output in output_parameter_tuples
+            }
 
         return WorkflowRunStatusResponse(
             workflow_id=workflow.workflow_permanent_id,
@@ -714,7 +809,9 @@ class WorkflowService:
         api_key: str | None = None,
         close_browser_on_completion: bool = True,
     ) -> None:
-        analytics.capture("skyvern-oss-agent-workflow-status", {"status": workflow_run.status})
+        analytics.capture(
+            "skyvern-oss-agent-workflow-status", {"status": workflow_run.status}
+        )
         tasks = await self.get_tasks_by_workflow_run_id(workflow_run.workflow_run_id)
         all_workflow_task_ids = [task.task_id for task in tasks]
         browser_state = await app.BROWSER_MANAGER.cleanup_for_workflow_run(
@@ -724,16 +821,26 @@ class WorkflowService:
         )
         if browser_state:
             await self.persist_video_data(browser_state, workflow, workflow_run)
-            await self.persist_debug_artifacts(browser_state, tasks[-1], workflow, workflow_run)
-            if workflow.persist_browser_session and browser_state.browser_artifacts.browser_session_dir:
+            await self.persist_debug_artifacts(
+                browser_state, tasks[-1], workflow, workflow_run
+            )
+            if (
+                workflow.persist_browser_session
+                and browser_state.browser_artifacts.browser_session_dir
+            ):
                 await app.STORAGE.store_browser_session(
                     workflow.organization_id,
                     workflow.workflow_permanent_id,
                     browser_state.browser_artifacts.browser_session_dir,
                 )
-                LOG.info("Persisted browser session for workflow run", workflow_run_id=workflow_run.workflow_run_id)
+                LOG.info(
+                    "Persisted browser session for workflow run",
+                    workflow_run_id=workflow_run.workflow_run_id,
+                )
 
-        await app.ARTIFACT_MANAGER.wait_for_upload_aiotasks_for_tasks(all_workflow_task_ids)
+        await app.ARTIFACT_MANAGER.wait_for_upload_aiotasks_for_tasks(
+            all_workflow_task_ids
+        )
 
         workflow_run_status_response = await self.build_workflow_run_status_response(
             workflow_permanent_id=workflow.workflow_permanent_id,
@@ -783,7 +890,9 @@ class WorkflowService:
             headers=headers,
         )
         try:
-            resp = requests.post(workflow_run.webhook_callback_url, data=payload, headers=headers)
+            resp = requests.post(
+                workflow_run.webhook_callback_url, data=payload, headers=headers
+            )
             if resp.ok:
                 LOG.info(
                     "Webhook sent successfully",
@@ -846,11 +955,16 @@ class WorkflowService:
     async def persist_tracing_data(
         self, browser_state: BrowserState, last_step: Step, workflow_run: WorkflowRun
     ) -> None:
-        if browser_state.browser_context is None or browser_state.browser_artifacts.traces_dir is None:
+        if (
+            browser_state.browser_context is None
+            or browser_state.browser_artifacts.traces_dir is None
+        ):
             return
 
         trace_path = f"{browser_state.browser_artifacts.traces_dir}/{workflow_run.workflow_run_id}.zip"
-        await app.ARTIFACT_MANAGER.create_artifact(step=last_step, artifact_type=ArtifactType.TRACE, path=trace_path)
+        await app.ARTIFACT_MANAGER.create_artifact(
+            step=last_step, artifact_type=ArtifactType.TRACE, path=trace_path
+        )
 
     async def persist_debug_artifacts(
         self,
@@ -924,24 +1038,33 @@ class WorkflowService:
 
             # Check if user's trying to manually create an output parameter
             if any(
-                parameter.parameter_type == ParameterType.OUTPUT for parameter in request.workflow_definition.parameters
+                parameter.parameter_type == ParameterType.OUTPUT
+                for parameter in request.workflow_definition.parameters
             ):
-                raise InvalidWorkflowDefinition(message="Cannot manually create output parameters")
+                raise InvalidWorkflowDefinition(
+                    message="Cannot manually create output parameters"
+                )
 
             # Check if any parameter keys collide with automatically created output parameter keys
             block_labels = [block.label for block in request.workflow_definition.blocks]
             # TODO (kerem): Check if block labels are unique
-            output_parameter_keys = [f"{block_label}_output" for block_label in block_labels]
-            parameter_keys = [parameter.key for parameter in request.workflow_definition.parameters]
+            output_parameter_keys = [
+                f"{block_label}_output" for block_label in block_labels
+            ]
+            parameter_keys = [
+                parameter.key for parameter in request.workflow_definition.parameters
+            ]
             if any(key in output_parameter_keys for key in parameter_keys):
                 raise WorkflowDefinitionHasReservedParameterKeys(
                     reserved_keys=output_parameter_keys, parameter_keys=parameter_keys
                 )
 
             # Create output parameters for all blocks
-            block_output_parameters = await WorkflowService._create_all_output_parameters_for_workflow(
-                workflow_id=workflow.workflow_id,
-                block_yamls=request.workflow_definition.blocks,
+            block_output_parameters = (
+                await WorkflowService._create_all_output_parameters_for_workflow(
+                    workflow_id=workflow.workflow_id,
+                    block_yamls=request.workflow_definition.blocks,
+                )
             )
             for block_output_parameter in block_output_parameters.values():
                 parameters[block_output_parameter.key] = block_output_parameter
@@ -961,51 +1084,67 @@ class WorkflowService:
                         key=parameter.key,
                         description=parameter.description,
                     )
-                elif parameter.parameter_type == ParameterType.BITWARDEN_LOGIN_CREDENTIAL:
+                elif (
+                    parameter.parameter_type == ParameterType.BITWARDEN_LOGIN_CREDENTIAL
+                ):
                     if not parameter.bitwarden_collection_id:
                         raise WorkflowParameterMissingRequiredValue(
                             workflow_parameter_type=ParameterType.BITWARDEN_LOGIN_CREDENTIAL,
                             workflow_parameter_key=parameter.key,
                             required_value="bitwarden_collection_id",
                         )
-                    parameters[parameter.key] = await self.create_bitwarden_login_credential_parameter(
-                        workflow_id=workflow.workflow_id,
-                        bitwarden_client_id_aws_secret_key=parameter.bitwarden_client_id_aws_secret_key,
-                        bitwarden_client_secret_aws_secret_key=parameter.bitwarden_client_secret_aws_secret_key,
-                        bitwarden_master_password_aws_secret_key=parameter.bitwarden_master_password_aws_secret_key,
-                        url_parameter_key=parameter.url_parameter_key,
-                        key=parameter.key,
-                        description=parameter.description,
-                        bitwarden_collection_id=parameter.bitwarden_collection_id,
+                    parameters[parameter.key] = (
+                        await self.create_bitwarden_login_credential_parameter(
+                            workflow_id=workflow.workflow_id,
+                            bitwarden_client_id_aws_secret_key=parameter.bitwarden_client_id_aws_secret_key,
+                            bitwarden_client_secret_aws_secret_key=parameter.bitwarden_client_secret_aws_secret_key,
+                            bitwarden_master_password_aws_secret_key=parameter.bitwarden_master_password_aws_secret_key,
+                            url_parameter_key=parameter.url_parameter_key,
+                            key=parameter.key,
+                            description=parameter.description,
+                            bitwarden_collection_id=parameter.bitwarden_collection_id,
+                        )
                     )
-                elif parameter.parameter_type == ParameterType.BITWARDEN_SENSITIVE_INFORMATION:
-                    parameters[parameter.key] = await self.create_bitwarden_sensitive_information_parameter(
-                        workflow_id=workflow.workflow_id,
-                        bitwarden_client_id_aws_secret_key=parameter.bitwarden_client_id_aws_secret_key,
-                        bitwarden_client_secret_aws_secret_key=parameter.bitwarden_client_secret_aws_secret_key,
-                        bitwarden_master_password_aws_secret_key=parameter.bitwarden_master_password_aws_secret_key,
-                        # TODO: remove "# type: ignore" after ensuring bitwarden_collection_id is always set
-                        bitwarden_collection_id=parameter.bitwarden_collection_id,  # type: ignore
-                        bitwarden_identity_key=parameter.bitwarden_identity_key,
-                        bitwarden_identity_fields=parameter.bitwarden_identity_fields,
-                        key=parameter.key,
-                        description=parameter.description,
+                elif (
+                    parameter.parameter_type
+                    == ParameterType.BITWARDEN_SENSITIVE_INFORMATION
+                ):
+                    parameters[parameter.key] = (
+                        await self.create_bitwarden_sensitive_information_parameter(
+                            workflow_id=workflow.workflow_id,
+                            bitwarden_client_id_aws_secret_key=parameter.bitwarden_client_id_aws_secret_key,
+                            bitwarden_client_secret_aws_secret_key=parameter.bitwarden_client_secret_aws_secret_key,
+                            bitwarden_master_password_aws_secret_key=parameter.bitwarden_master_password_aws_secret_key,
+                            # TODO: remove "# type: ignore" after ensuring bitwarden_collection_id is always set
+                            bitwarden_collection_id=parameter.bitwarden_collection_id,  # type: ignore
+                            bitwarden_identity_key=parameter.bitwarden_identity_key,
+                            bitwarden_identity_fields=parameter.bitwarden_identity_fields,
+                            key=parameter.key,
+                            description=parameter.description,
+                        )
                     )
-                elif parameter.parameter_type == ParameterType.BITWARDEN_CREDIT_CARD_DATA:
-                    if not organization.bw_organization_id and not organization.bw_collection_ids:
+                elif (
+                    parameter.parameter_type == ParameterType.BITWARDEN_CREDIT_CARD_DATA
+                ):
+                    if (
+                        not organization.bw_organization_id
+                        and not organization.bw_collection_ids
+                    ):
                         raise InvalidWorkflowDefinition(
                             message="To use credit card data parameters, please contact us at support@skyvern.com"
                         )
-                    parameters[parameter.key] = await self.create_bitwarden_credit_card_data_parameter(
-                        workflow_id=workflow.workflow_id,
-                        bitwarden_client_id_aws_secret_key=parameter.bitwarden_client_id_aws_secret_key,
-                        bitwarden_client_secret_aws_secret_key=parameter.bitwarden_client_secret_aws_secret_key,
-                        bitwarden_master_password_aws_secret_key=parameter.bitwarden_master_password_aws_secret_key,
-                        # TODO: remove "# type: ignore" after ensuring bitwarden_collection_id is always set
-                        bitwarden_collection_id=parameter.bitwarden_collection_id,  # type: ignore
-                        bitwarden_item_id=parameter.bitwarden_item_id,
-                        key=parameter.key,
-                        description=parameter.description,
+                    parameters[parameter.key] = (
+                        await self.create_bitwarden_credit_card_data_parameter(
+                            workflow_id=workflow.workflow_id,
+                            bitwarden_client_id_aws_secret_key=parameter.bitwarden_client_id_aws_secret_key,
+                            bitwarden_client_secret_aws_secret_key=parameter.bitwarden_client_secret_aws_secret_key,
+                            bitwarden_master_password_aws_secret_key=parameter.bitwarden_master_password_aws_secret_key,
+                            # TODO: remove "# type: ignore" after ensuring bitwarden_collection_id is always set
+                            bitwarden_collection_id=parameter.bitwarden_collection_id,  # type: ignore
+                            bitwarden_item_id=parameter.bitwarden_item_id,
+                            key=parameter.key,
+                            description=parameter.description,
+                        )
                     )
                 elif parameter.parameter_type == ParameterType.WORKFLOW:
                     parameters[parameter.key] = await self.create_workflow_parameter(
@@ -1051,7 +1190,9 @@ class WorkflowService:
                 )
 
             if duplicate_parameter_keys:
-                raise WorkflowDefinitionHasDuplicateParameterKeys(duplicate_keys=duplicate_parameter_keys)
+                raise WorkflowDefinitionHasDuplicateParameterKeys(
+                    duplicate_keys=duplicate_parameter_keys
+                )
             # Create blocks from the request
             block_label_mapping = {}
             blocks = []
@@ -1061,7 +1202,9 @@ class WorkflowService:
                 block_label_mapping[block.label] = block
 
             # Set the blocks for the workflow definition
-            workflow_definition = WorkflowDefinition(parameters=parameters.values(), blocks=blocks)
+            workflow_definition = WorkflowDefinition(
+                parameters=parameters.values(), blocks=blocks
+            )
             workflow = await self.update_workflow(
                 workflow_id=workflow.workflow_id,
                 organization_id=organization_id,
@@ -1082,13 +1225,19 @@ class WorkflowService:
                     f"Failed to create workflow from request, deleting workflow {new_workflow_id}",
                     organization_id=organization_id,
                 )
-                await self.delete_workflow_by_id(workflow_id=new_workflow_id, organization_id=organization_id)
+                await self.delete_workflow_by_id(
+                    workflow_id=new_workflow_id, organization_id=organization_id
+                )
             else:
-                LOG.exception(f"Failed to create workflow from request, title: {request.title}")
+                LOG.exception(
+                    f"Failed to create workflow from request, title: {request.title}"
+                )
             raise e
 
     @staticmethod
-    async def _create_output_parameter_for_block(workflow_id: str, block_yaml: BLOCK_YAML_TYPES) -> OutputParameter:
+    async def _create_output_parameter_for_block(
+        workflow_id: str, block_yaml: BLOCK_YAML_TYPES
+    ) -> OutputParameter:
         output_parameter_key = f"{block_yaml.label}_output"
         return await app.DATABASE.create_output_parameter(
             workflow_id=workflow_id,
@@ -1124,7 +1273,10 @@ class WorkflowService:
         output_parameter = parameters[f"{block_yaml.label}_output"]
         if block_yaml.block_type == BlockType.TASK:
             task_block_parameters = (
-                [parameters[parameter_key] for parameter_key in block_yaml.parameter_keys]
+                [
+                    parameters[parameter_key]
+                    for parameter_key in block_yaml.parameter_keys
+                ]
                 if block_yaml.parameter_keys
                 else []
             )
@@ -1149,7 +1301,9 @@ class WorkflowService:
             )
         elif block_yaml.block_type == BlockType.FOR_LOOP:
             loop_blocks = [
-                await WorkflowService.block_yaml_to_block(workflow, loop_block, parameters)
+                await WorkflowService.block_yaml_to_block(
+                    workflow, loop_block, parameters
+                )
                 for loop_block in block_yaml.loop_blocks
             ]
             loop_over_parameter = parameters[block_yaml.loop_over_parameter_key]
@@ -1165,7 +1319,10 @@ class WorkflowService:
                 label=block_yaml.label,
                 code=block_yaml.code,
                 parameters=(
-                    [parameters[parameter_key] for parameter_key in block_yaml.parameter_keys]
+                    [
+                        parameters[parameter_key]
+                        for parameter_key in block_yaml.parameter_keys
+                    ]
                     if block_yaml.parameter_keys
                     else []
                 ),
@@ -1178,7 +1335,10 @@ class WorkflowService:
                 llm_key=block_yaml.llm_key,
                 prompt=block_yaml.prompt,
                 parameters=(
-                    [parameters[parameter_key] for parameter_key in block_yaml.parameter_keys]
+                    [
+                        parameters[parameter_key]
+                        for parameter_key in block_yaml.parameter_keys
+                    ]
                     if block_yaml.parameter_keys
                     else []
                 ),

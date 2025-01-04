@@ -186,7 +186,9 @@ class Task(TaskBase):
         description="The ID of the task.",
         examples=["50da533e-3904-4401-8a07-c49adf88b5eb"],
     )
-    status: TaskStatus = Field(..., description="The status of the task.", examples=["created"])
+    status: TaskStatus = Field(
+        ..., description="The status of the task.", examples=["created"]
+    )
     extracted_information: dict[str, Any] | list | str | None = Field(
         None,
         description="The extracted information from the task.",
@@ -213,13 +215,21 @@ class Task(TaskBase):
         if not old_status.can_update_to(status):
             if old_status == TaskStatus.canceled:
                 raise TaskAlreadyCanceled(new_status=status, task_id=self.task_id)
-            raise InvalidTaskStatusTransition(old_status=old_status, new_status=status, task_id=self.task_id)
+            raise InvalidTaskStatusTransition(
+                old_status=old_status, new_status=status, task_id=self.task_id
+            )
 
         if status.requires_failure_reason() and failure_reason is None:
             raise ValueError(f"status_requires_failure_reason({status},{self.task_id}")
 
-        if status.requires_extracted_info() and self.data_extraction_goal and extracted_information is None:
-            raise ValueError(f"status_requires_extracted_information({status},{self.task_id}")
+        if (
+            status.requires_extracted_info()
+            and self.data_extraction_goal
+            and extracted_information is None
+        ):
+            raise ValueError(
+                f"status_requires_extracted_information({status},{self.task_id}"
+            )
 
         if status.cant_have_extracted_info() and extracted_information is not None:
             raise ValueError(f"status_cant_have_extracted_information({self.task_id})")

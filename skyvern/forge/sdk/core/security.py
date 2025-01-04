@@ -39,5 +39,7 @@ def generate_skyvern_signature(
 
     :return: the Skyvern signature
     """
-    hash_obj = hmac.new(api_key.encode("utf-8"), msg=payload.encode("utf-8"), digestmod=hashlib.sha256)
+    hash_obj = hmac.new(
+        api_key.encode("utf-8"), msg=payload.encode("utf-8"), digestmod=hashlib.sha256
+    )
     return hash_obj.hexdigest()

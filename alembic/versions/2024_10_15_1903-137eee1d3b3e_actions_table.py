@@ -64,9 +64,21 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("action_id"),
     )
-    op.create_index("action_org_task_step_index", "actions", ["organization_id", "task_id", "step_id"], unique=False)
-    op.create_index(op.f("ix_actions_action_id"), "actions", ["action_id"], unique=False)
-    op.create_index(op.f("ix_actions_source_action_id"), "actions", ["source_action_id"], unique=False)
+    op.create_index(
+        "action_org_task_step_index",
+        "actions",
+        ["organization_id", "task_id", "step_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_actions_action_id"), "actions", ["action_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_actions_source_action_id"),
+        "actions",
+        ["source_action_id"],
+        unique=False,
+    )
     op.create_index(op.f("ix_actions_task_id"), "actions", ["task_id"], unique=False)
     # ### end Alembic commands ###
 

@@ -38,7 +38,9 @@ def reset_session_state() -> None:
 
 CONFIGS_DICT = st.secrets["skyvern"]["configs"]
 if not CONFIGS_DICT:
-    raise Exception("No configuration found. Copy the values from 1P and restart the app.")
+    raise Exception(
+        "No configuration found. Copy the values from 1P and restart the app."
+    )
 SETTINGS = {}
 for config in CONFIGS_DICT:
     env = config["env"]
@@ -48,7 +50,9 @@ for config in CONFIGS_DICT:
     SETTINGS[env] = {"host": host, "orgs": org_dict}
 
 st.sidebar.markdown("#### **Settings**")
-select_env = st.sidebar.selectbox("Environment", list(SETTINGS.keys()), on_change=reset_session_state)
+select_env = st.sidebar.selectbox(
+    "Environment", list(SETTINGS.keys()), on_change=reset_session_state
+)
 select_org = st.sidebar.selectbox(
     "Organization",
     list(SETTINGS[select_env]["orgs"].keys()),
@@ -98,7 +102,9 @@ selected_step_index = st.session_state.selected_step_index
 # Onclick handlers
 def select_task(task: dict) -> None:
     st.session_state.selected_task = task
-    st.session_state.selected_task_recording_uri = repository.get_task_recording_uri(task)
+    st.session_state.selected_task_recording_uri = repository.get_task_recording_uri(
+        task
+    )
     # reset step selection
     st.session_state.selected_step = None
     # save task's steps in session state
@@ -139,7 +145,9 @@ with execute_tab:
         supported_examples,
         key=lambda x: (-1 if x.name.lower() == tab_name.lower() else 0),
     )
-    example_tabs = st.tabs([supported_example.name for supported_example in sorted_supported_examples])
+    example_tabs = st.tabs(
+        [supported_example.name for supported_example in sorted_supported_examples]
+    )
 
     for i, example_tab in enumerate(example_tabs):
         with example_tab:
@@ -152,14 +160,18 @@ with execute_tab:
                 copy_curl.button(
                     "Copy cURL",
                     key=f"copy_curl_{unique_key}",
-                    on_click=lambda: copy_curl_to_clipboard(task_request_body=task_request_body),
+                    on_click=lambda: copy_curl_to_clipboard(
+                        task_request_body=task_request_body
+                    ),
                 )
                 with st.form(f"task_form_{unique_key}"):
                     run_task.markdown("## Run a task")
 
                     example = sorted_supported_examples[i]
                     # Create all the fields to create a TaskRequest object
-                    st_url = st.text_input("URL*", value=example.url, key=f"url_{unique_key}")
+                    st_url = st.text_input(
+                        "URL*", value=example.url, key=f"url_{unique_key}"
+                    )
                     st_webhook_callback_url = st.text_input(
                         "Webhook Callback URL",
                         key=f"webhook_{unique_key}",
@@ -218,14 +230,20 @@ with execute_tab:
                 st.markdown("The starting URL for the task.")
                 st.markdown("\n")
                 st.markdown("#### **Webhook Callback URL**")
-                st.markdown("The URL to call with the results when the task is completed.")
+                st.markdown(
+                    "The URL to call with the results when the task is completed."
+                )
                 st.markdown("\n")
                 st.markdown("#### **Navigation Goal**")
-                st.markdown("The user's goal for the task. Nullable if the task is only for data extraction.")
+                st.markdown(
+                    "The user's goal for the task. Nullable if the task is only for data extraction."
+                )
                 st.markdown("\n")
                 st.markdown("\n")
                 st.markdown("#### **Data Extraction Goal**")
-                st.markdown("The user's goal for data extraction. Nullable if the task is only for navigation.")
+                st.markdown(
+                    "The user's goal for data extraction. Nullable if the task is only for navigation."
+                )
                 st.markdown("\n")
                 st.markdown("\n")
                 st.markdown("#### **Navigation Payload**")
@@ -288,18 +306,26 @@ with visualizer_tab:
                 on_click=select_task,
                 args=(task,),
                 use_container_width=True,
-                type=("primary" if selected_task and task_id == selected_task["task_id"] else "secondary"),
+                type=(
+                    "primary"
+                    if selected_task and task_id == selected_task["task_id"]
+                    else "secondary"
+                ),
             )
             for task_id, task in tasks.items()
         }
 
         # Display pagination buttons
-        task_page_prev, _, show_task_page_number, _, task_page_next = col_tasks.columns([1, 1, 1, 1, 1])
+        task_page_prev, _, show_task_page_number, _, task_page_next = col_tasks.columns(
+            [1, 1, 1, 1, 1]
+        )
         show_task_page_number.button(str(task_page_number), disabled=True)
         if task_page_next.button("\>"):
             st.session_state.task_page_number += 1
         if task_page_prev.button("\<", disabled=task_page_number == 1):
-            st.session_state.task_page_number = max(1, st.session_state.task_page_number - 1)
+            st.session_state.task_page_number = max(
+                1, st.session_state.task_page_number - 1
+            )
 
         (
             tab_task,
@@ -365,7 +391,11 @@ with visualizer_tab:
                     on_click=select_step,
                     args=(step,),
                     use_container_width=True,
-                    type=("primary" if selected_step and step["step_id"] == selected_step["step_id"] else "secondary"),
+                    type=(
+                        "primary"
+                        if selected_step and step["step_id"] == selected_step["step_id"]
+                        else "secondary"
+                    ),
                 )
                 for step in task_steps
             }
@@ -395,13 +425,22 @@ with visualizer_tab:
             if selected_step:
                 tab_step.json(selected_step)
 
-                artifacts_response = repository.get_artifacts(selected_task["task_id"], selected_step["step_id"])
-                split_artifact_uris = [artifact["uri"].split("/") for artifact in artifacts_response]
-                file_name_to_uris = {split_uri[-1]: "/".join(split_uri) for split_uri in split_artifact_uris}
+                artifacts_response = repository.get_artifacts(
+                    selected_task["task_id"], selected_step["step_id"]
+                )
+                split_artifact_uris = [
+                    artifact["uri"].split("/") for artifact in artifacts_response
+                ]
+                file_name_to_uris = {
+                    split_uri[-1]: "/".join(split_uri)
+                    for split_uri in split_artifact_uris
+                }
 
                 for file_name, uri in file_name_to_uris.items():
                     file_name = file_name.lower()
-                    if file_name.endswith("screenshot_llm.png") or file_name.endswith("screenshot.png"):
+                    if file_name.endswith("screenshot_llm.png") or file_name.endswith(
+                        "screenshot.png"
+                    ):
                         streamlit_content_safe(
                             tab_screenshot,
                             tab_screenshot.image,

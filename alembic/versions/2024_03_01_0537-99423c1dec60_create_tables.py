@@ -91,7 +91,9 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("workflow_id"),
     )
-    op.create_index(op.f("ix_workflows_workflow_id"), "workflows", ["workflow_id"], unique=False)
+    op.create_index(
+        op.f("ix_workflows_workflow_id"), "workflows", ["workflow_id"], unique=False
+    )
     op.create_table(
         "aws_secret_parameters",
         sa.Column("aws_secret_parameter_id", sa.String(), nullable=False),
@@ -304,7 +306,9 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("artifact_id"),
     )
-    op.create_index(op.f("ix_artifacts_artifact_id"), "artifacts", ["artifact_id"], unique=False)
+    op.create_index(
+        op.f("ix_artifacts_artifact_id"), "artifacts", ["artifact_id"], unique=False
+    )
     # ### end Alembic commands ###
 
 
@@ -331,9 +335,13 @@ def downgrade() -> None:
         op.f("ix_workflow_parameters_workflow_parameter_id"),
         table_name="workflow_parameters",
     )
-    op.drop_index(op.f("ix_workflow_parameters_workflow_id"), table_name="workflow_parameters")
+    op.drop_index(
+        op.f("ix_workflow_parameters_workflow_id"), table_name="workflow_parameters"
+    )
     op.drop_table("workflow_parameters")
-    op.drop_index(op.f("ix_aws_secret_parameters_workflow_id"), table_name="aws_secret_parameters")
+    op.drop_index(
+        op.f("ix_aws_secret_parameters_workflow_id"), table_name="aws_secret_parameters"
+    )
     op.drop_index(
         op.f("ix_aws_secret_parameters_aws_secret_parameter_id"),
         table_name="aws_secret_parameters",
@@ -341,12 +349,16 @@ def downgrade() -> None:
     op.drop_table("aws_secret_parameters")
     op.drop_index(op.f("ix_workflows_workflow_id"), table_name="workflows")
     op.drop_table("workflows")
-    op.drop_index(op.f("ix_organization_auth_tokens_token"), table_name="organization_auth_tokens")
+    op.drop_index(
+        op.f("ix_organization_auth_tokens_token"), table_name="organization_auth_tokens"
+    )
     op.drop_index(
         op.f("ix_organization_auth_tokens_organization_id"),
         table_name="organization_auth_tokens",
     )
-    op.drop_index(op.f("ix_organization_auth_tokens_id"), table_name="organization_auth_tokens")
+    op.drop_index(
+        op.f("ix_organization_auth_tokens_id"), table_name="organization_auth_tokens"
+    )
     op.drop_table("organization_auth_tokens")
     op.drop_index(op.f("ix_organizations_organization_id"), table_name="organizations")
     op.drop_table("organizations")

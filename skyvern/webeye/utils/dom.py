@@ -54,7 +54,9 @@ async def resolve_locator(
     while len(iframe_path) > 0:
         child_frame = iframe_path.pop()
 
-        frame_handler = await current_frame.query_selector(f"[{SKYVERN_ID_ATTR}='{child_frame}']")
+        frame_handler = await current_frame.query_selector(
+            f"[{SKYVERN_ID_ATTR}='{child_frame}']"
+        )
         if frame_handler is None:
             raise NoneFrameError(frame_id=child_frame)
 
@@ -63,7 +65,9 @@ async def resolve_locator(
             raise NoneFrameError(frame_id=child_frame)
         current_frame = content_frame
 
-        current_page = current_page.frame_locator(f"[{SKYVERN_ID_ATTR}='{child_frame}']")
+        current_page = current_page.frame_locator(
+            f"[{SKYVERN_ID_ATTR}='{child_frame}']"
+        )
 
     return current_page.locator(css), current_frame
 
@@ -92,7 +96,9 @@ class SkyvernElement:
     """
 
     @classmethod
-    async def create_from_incremental(cls, incre_page: IncrementalScrapePage, element_id: str) -> SkyvernElement:
+    async def create_from_incremental(
+        cls, incre_page: IncrementalScrapePage, element_id: str
+    ) -> SkyvernElement:
         element_dict = incre_page.id_to_element_dict.get(element_id)
         if element_dict is None:
             raise MissingElementDict(element_id)
@@ -106,7 +112,11 @@ class SkyvernElement:
 
         num_elements = await locator.count()
         if num_elements < 1:
-            LOG.warning("No elements found with css. Validation failed.", css=css_selector, element_id=element_id)
+            LOG.warning(
+                "No elements found with css. Validation failed.",
+                css=css_selector,
+                element_id=element_id,
+            )
             raise MissingElement(selector=css_selector, element_id=element_id)
 
         elif num_elements > 1:
@@ -116,17 +126,27 @@ class SkyvernElement:
                 selector=css_selector,
                 element_id=element_id,
             )
-            raise MultipleElementsFound(num=num_elements, selector=css_selector, element_id=element_id)
+            raise MultipleElementsFound(
+                num=num_elements, selector=css_selector, element_id=element_id
+            )
 
         return cls(locator, frame, element_dict)
 
-    def __init__(self, locator: Locator, frame: Page | Frame, static_element: dict, hash_value: str = "") -> None:
+    def __init__(
+        self,
+        locator: Locator,
+        frame: Page | Frame,
+        static_element: dict,
+        hash_value: str = "",
+    ) -> None:
         self.__static_element = static_element
         self.__frame = frame
         self.locator = locator
         self.hash_value = hash_value
 
-    def build_HTML(self, need_trim_element: bool = True, need_skyvern_attrs: bool = True) -> str:
+    def build_HTML(
+        self, need_trim_element: bool = True, need_skyvern_attrs: bool = True
+    ) -> str:
         element_dict = self.get_element_dict()
         if need_trim_element:
             element_dict = trim_element(copy.deepcopy(element_dict))
@@ -191,7 +211,11 @@ class SkyvernElement:
             return True
 
         # if input has these attrs, it expects user to type and input sth
-        if await self.get_attr("min") or await self.get_attr("max") or await self.get_attr("step"):
+        if (
+            await self.get_attr("min")
+            or await self.get_attr("max")
+            or await self.get_attr("step")
+        ):
             return True
 
         return False
@@ -293,7 +317,9 @@ class SkyvernElement:
         assert handler is not None
         return handler
 
-    def find_element_id_in_label_children(self, element_type: InteractiveElement) -> str | None:
+    def find_element_id_in_label_children(
+        self, element_type: InteractiveElement
+    ) -> str | None:
         tag_name = self.get_tag_name()
         if tag_name != "label":
             raise ElementIsNotLabel(tag_name)
@@ -326,7 +352,9 @@ class SkyvernElement:
         return None
 
     async def find_label_for(
-        self, dom: DomUtil, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS
+        self,
+        dom: DomUtil,
+        timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS,
     ) -> SkyvernElement | None:
         if self.get_tag_name() != "label":
             return None
@@ -387,7 +415,10 @@ class SkyvernElement:
 
             try:
                 for_element = await item.find_label_for(dom=dom)
-                if for_element is not None and for_element.get_tag_name() == element_type:
+                if (
+                    for_element is not None
+                    and for_element.get_tag_name() == element_type
+                ):
                     return for_element
             except Exception:
                 LOG.error(
@@ -418,11 +449,15 @@ class SkyvernElement:
 
         return await self.locator.get_attribute(attr_name, timeout=timeout)
 
-    async def focus(self, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS) -> None:
+    async def focus(
+        self, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS
+    ) -> None:
         await self.get_locator().focus(timeout=timeout)
 
     async def input_sequentially(
-        self, text: str, default_timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS
+        self,
+        text: str,
+        default_timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS,
     ) -> None:
         length = len(text)
         if length > TEXT_PRESS_MAX_LENGTH:
@@ -434,49 +469,80 @@ class SkyvernElement:
         await self.press_fill(text, timeout=default_timeout)
 
     async def press_key(
-        self, key: str, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS
+        self,
+        key: str,
+        timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS,
     ) -> None:
         await self.get_locator().press(key=key, timeout=timeout)
 
     async def press_fill(
-        self, text: str, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS
+        self,
+        text: str,
+        timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS,
     ) -> None:
-        await self.get_locator().press_sequentially(text, delay=TEXT_INPUT_DELAY, timeout=timeout)
+        await self.get_locator().press_sequentially(
+            text, delay=TEXT_INPUT_DELAY, timeout=timeout
+        )
 
     async def input_fill(
-        self, text: str, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS
+        self,
+        text: str,
+        timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS,
     ) -> None:
         await self.get_locator().fill(text, timeout=timeout)
 
-    async def input_clear(self, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS) -> None:
+    async def input_clear(
+        self, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS
+    ) -> None:
         await self.get_locator().clear(timeout=timeout)
 
     async def move_mouse_to(
-        self, page: Page, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS
+        self,
+        page: Page,
+        timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS,
     ) -> tuple[float, float]:
         bounding_box = await self.get_locator().bounding_box(timeout=timeout)
         if not bounding_box:
             raise NoElementBoudingBox(element_id=self.get_id())
-        x, y, width, height = bounding_box["x"], bounding_box["y"], bounding_box["width"], bounding_box["height"]
+        x, y, width, height = (
+            bounding_box["x"],
+            bounding_box["y"],
+            bounding_box["width"],
+            bounding_box["height"],
+        )
 
         # calculate the click point, use open interval to avoid clicking on the border
         epsilon = 0.01
-        dest_x = uniform(x + epsilon, x + width - epsilon) if width > 2 * epsilon else (x + width) / 2
-        dest_y = uniform(y + epsilon, y + height - epsilon) if height > 2 * epsilon else (y + height) / 2
+        dest_x = (
+            uniform(x + epsilon, x + width - epsilon)
+            if width > 2 * epsilon
+            else (x + width) / 2
+        )
+        dest_y = (
+            uniform(y + epsilon, y + height - epsilon)
+            if height > 2 * epsilon
+            else (y + height) / 2
+        )
         await page.mouse.move(dest_x, dest_y)
 
         return dest_x, dest_y
 
     async def coordinate_click(
-        self, page: Page, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS
+        self,
+        page: Page,
+        timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS,
     ) -> None:
         click_x, click_y = await self.move_mouse_to(page=page, timeout=timeout)
         await page.mouse.click(click_x, click_y)
 
     async def blur(self) -> None:
-        await self.get_frame().evaluate("(element) => element.blur()", await self.get_element_handler())
+        await self.get_frame().evaluate(
+            "(element) => element.blur()", await self.get_element_handler()
+        )
 
-    async def scroll_into_view(self, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS) -> None:
+    async def scroll_into_view(
+        self, timeout: float = SettingsManager.get_settings().BROWSER_ACTION_TIMEOUT_MS
+    ) -> None:
         element_handler = await self.get_element_handler(timeout=timeout)
         try:
             await element_handler.scroll_into_view_if_needed(timeout=timeout)
@@ -520,11 +586,17 @@ class DomUtil:
         if not css:
             raise MissingElementInCSSMap(element_id)
 
-        locator, frame_content = await resolve_locator(self.scraped_page, self.page, frame, css)
+        locator, frame_content = await resolve_locator(
+            self.scraped_page, self.page, frame, css
+        )
 
         num_elements = await locator.count()
         if num_elements < 1:
-            LOG.warning("No elements found with css. Validation failed.", css=css, element_id=element_id)
+            LOG.warning(
+                "No elements found with css. Validation failed.",
+                css=css,
+                element_id=element_id,
+            )
             raise MissingElement(selector=css, element_id=element_id)
 
         elif num_elements > 1:
@@ -534,7 +606,9 @@ class DomUtil:
                 selector=css,
                 element_id=element_id,
             )
-            raise MultipleElementsFound(num=num_elements, selector=css, element_id=element_id)
+            raise MultipleElementsFound(
+                num=num_elements, selector=css, element_id=element_id
+            )
 
         hash_value = self.scraped_page.id_to_element_hash.get(element_id, "")
 

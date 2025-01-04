@@ -29,7 +29,9 @@ FILE_EXTENTSION_MAP: dict[ArtifactType, str] = {
 
 class BaseStorage(ABC):
     @abstractmethod
-    def build_uri(self, artifact_id: str, step: Step, artifact_type: ArtifactType) -> str:
+    def build_uri(
+        self, artifact_id: str, step: Step, artifact_type: ArtifactType
+    ) -> str:
         pass
 
     @abstractmethod
@@ -57,13 +59,19 @@ class BaseStorage(ABC):
         pass
 
     @abstractmethod
-    async def get_streaming_file(self, organization_id: str, file_name: str, use_default: bool = True) -> bytes | None:
+    async def get_streaming_file(
+        self, organization_id: str, file_name: str, use_default: bool = True
+    ) -> bytes | None:
         pass
 
     @abstractmethod
-    async def store_browser_session(self, organization_id: str, workflow_permanent_id: str, directory: str) -> None:
+    async def store_browser_session(
+        self, organization_id: str, workflow_permanent_id: str, directory: str
+    ) -> None:
         pass
 
     @abstractmethod
-    async def retrieve_browser_session(self, organization_id: str, workflow_permanent_id: str) -> str | None:
+    async def retrieve_browser_session(
+        self, organization_id: str, workflow_permanent_id: str
+    ) -> str | None:
         pass

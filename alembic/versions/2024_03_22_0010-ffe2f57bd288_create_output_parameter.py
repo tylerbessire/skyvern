@@ -90,7 +90,11 @@ def downgrade() -> None:
         table_name="workflow_run_output_parameters",
     )
     op.drop_table("workflow_run_output_parameters")
-    op.drop_index(op.f("ix_output_parameters_workflow_id"), table_name="output_parameters")
-    op.drop_index(op.f("ix_output_parameters_output_parameter_id"), table_name="output_parameters")
+    op.drop_index(
+        op.f("ix_output_parameters_workflow_id"), table_name="output_parameters"
+    )
+    op.drop_index(
+        op.f("ix_output_parameters_output_parameter_id"), table_name="output_parameters"
+    )
     op.drop_table("output_parameters")
     # ### end Alembic commands ###

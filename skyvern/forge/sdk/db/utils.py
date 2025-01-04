@@ -71,7 +71,9 @@ def convert_to_task(task_obj: TaskModel, debug_enabled: bool = False) -> Task:
         extracted_information=task_obj.extracted_information,
         failure_reason=task_obj.failure_reason,
         organization_id=task_obj.organization_id,
-        proxy_location=(ProxyLocation(task_obj.proxy_location) if task_obj.proxy_location else None),
+        proxy_location=(
+            ProxyLocation(task_obj.proxy_location) if task_obj.proxy_location else None
+        ),
         extracted_information_schema=task_obj.extracted_information_schema,
         workflow_run_id=task_obj.workflow_run_id,
         order=task_obj.order,
@@ -132,7 +134,9 @@ def convert_to_organization_auth_token(
     )
 
 
-def convert_to_artifact(artifact_model: ArtifactModel, debug_enabled: bool = False) -> Artifact:
+def convert_to_artifact(
+    artifact_model: ArtifactModel, debug_enabled: bool = False
+) -> Artifact:
     if debug_enabled:
         LOG.debug(
             "Converting ArtifactModel to Artifact",
@@ -151,7 +155,9 @@ def convert_to_artifact(artifact_model: ArtifactModel, debug_enabled: bool = Fal
     )
 
 
-def convert_to_workflow(workflow_model: WorkflowModel, debug_enabled: bool = False) -> Workflow:
+def convert_to_workflow(
+    workflow_model: WorkflowModel, debug_enabled: bool = False
+) -> Workflow:
     if debug_enabled:
         LOG.debug(
             "Converting WorkflowModel to Workflow",
@@ -167,18 +173,26 @@ def convert_to_workflow(workflow_model: WorkflowModel, debug_enabled: bool = Fal
         totp_verification_url=workflow_model.totp_verification_url,
         totp_identifier=workflow_model.totp_identifier,
         persist_browser_session=workflow_model.persist_browser_session,
-        proxy_location=(ProxyLocation(workflow_model.proxy_location) if workflow_model.proxy_location else None),
+        proxy_location=(
+            ProxyLocation(workflow_model.proxy_location)
+            if workflow_model.proxy_location
+            else None
+        ),
         version=workflow_model.version,
         is_saved_task=workflow_model.is_saved_task,
         description=workflow_model.description,
-        workflow_definition=WorkflowDefinition.model_validate(workflow_model.workflow_definition),
+        workflow_definition=WorkflowDefinition.model_validate(
+            workflow_model.workflow_definition
+        ),
         created_at=workflow_model.created_at,
         modified_at=workflow_model.modified_at,
         deleted_at=workflow_model.deleted_at,
     )
 
 
-def convert_to_workflow_run(workflow_run_model: WorkflowRunModel, debug_enabled: bool = False) -> WorkflowRun:
+def convert_to_workflow_run(
+    workflow_run_model: WorkflowRunModel, debug_enabled: bool = False
+) -> WorkflowRun:
     if debug_enabled:
         LOG.debug(
             "Converting WorkflowRunModel to WorkflowRun",
@@ -192,7 +206,9 @@ def convert_to_workflow_run(workflow_run_model: WorkflowRunModel, debug_enabled:
         organization_id=workflow_run_model.organization_id,
         status=WorkflowRunStatus[workflow_run_model.status],
         proxy_location=(
-            ProxyLocation(workflow_run_model.proxy_location) if workflow_run_model.proxy_location else None
+            ProxyLocation(workflow_run_model.proxy_location)
+            if workflow_run_model.proxy_location
+            else None
         ),
         webhook_callback_url=workflow_run_model.webhook_callback_url,
         totp_verification_url=workflow_run_model.totp_verification_url,
@@ -211,13 +227,17 @@ def convert_to_workflow_parameter(
             workflow_parameter_id=workflow_parameter_model.workflow_parameter_id,
         )
 
-    workflow_parameter_type = WorkflowParameterType[workflow_parameter_model.workflow_parameter_type.upper()]
+    workflow_parameter_type = WorkflowParameterType[
+        workflow_parameter_model.workflow_parameter_type.upper()
+    ]
 
     return WorkflowParameter(
         workflow_parameter_id=workflow_parameter_model.workflow_parameter_id,
         workflow_parameter_type=workflow_parameter_type,
         workflow_id=workflow_parameter_model.workflow_id,
-        default_value=workflow_parameter_type.convert_value(workflow_parameter_model.default_value),
+        default_value=workflow_parameter_type.convert_value(
+            workflow_parameter_model.default_value
+        ),
         key=workflow_parameter_model.key,
         description=workflow_parameter_model.description,
         created_at=workflow_parameter_model.created_at,
@@ -355,6 +375,8 @@ def convert_to_workflow_run_parameter(
     return WorkflowRunParameter(
         workflow_run_id=workflow_run_parameter_model.workflow_run_id,
         workflow_parameter_id=workflow_run_parameter_model.workflow_parameter_id,
-        value=workflow_parameter.workflow_parameter_type.convert_value(workflow_run_parameter_model.value),
+        value=workflow_parameter.workflow_parameter_type.convert_value(
+            workflow_run_parameter_model.value
+        ),
         created_at=workflow_run_parameter_model.created_at,
     )

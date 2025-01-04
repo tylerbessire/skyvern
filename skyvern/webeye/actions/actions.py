@@ -63,13 +63,17 @@ class SelectOption(BaseModel):
     index: int | None = None
 
     def __repr__(self) -> str:
-        return f"SelectOption(label={self.label}, value={self.value}, index={self.index})"
+        return (
+            f"SelectOption(label={self.label}, value={self.value}, index={self.index})"
+        )
 
 
 class InputOrSelectContext(BaseModel):
     field: str | None = None
     is_required: bool | None = None
-    is_search_bar: bool | None = None  # don't trigger custom-selection logic when it's a search bar
+    is_search_bar: bool | None = (
+        None  # don't trigger custom-selection logic when it's a search bar
+    )
 
     def __repr__(self) -> str:
         return f"InputOrSelectContext(field={self.field}, is_required={self.is_required}, is_search_bar={self.is_search_bar})"
@@ -177,7 +181,9 @@ class UploadFileAction(WebAction):
         return f"UploadFileAction(element_id={self.element_id}, file={self.file_url}, is_upload_file_tag={self.is_upload_file_tag})"
 
 
-@deprecated("This action is not used in the current implementation. Click actions are used instead.")
+@deprecated(
+    "This action is not used in the current implementation. Click actions are used instead."
+)
 class DownloadFileAction(WebAction):
     action_type: ActionType = ActionType.DOWNLOAD_FILE
     file_name: str
@@ -229,7 +235,11 @@ class CompleteAction(DecisiveAction):
     data_extraction_goal: str | None = None
 
 
-def parse_action(action: Dict[str, Any], scraped_page: ScrapedPage, data_extraction_goal: str | None = None) -> Action:
+def parse_action(
+    action: Dict[str, Any],
+    scraped_page: ScrapedPage,
+    data_extraction_goal: str | None = None,
+) -> Action:
     if "id" in action:
         element_id = action["id"]
     elif "element_id" in action:
@@ -237,11 +247,17 @@ def parse_action(action: Dict[str, Any], scraped_page: ScrapedPage, data_extract
     else:
         element_id = None
 
-    skyvern_element_hash = scraped_page.id_to_element_hash.get(element_id) if element_id else None
-    skyvern_element_data = scraped_page.id_to_element_dict.get(element_id) if element_id else None
+    skyvern_element_hash = (
+        scraped_page.id_to_element_hash.get(element_id) if element_id else None
+    )
+    skyvern_element_data = (
+        scraped_page.id_to_element_dict.get(element_id) if element_id else None
+    )
 
     reasoning = action["reasoning"] if "reasoning" in action else None
-    confidence_float = action["confidence_float"] if "confidence_float" in action else None
+    confidence_float = (
+        action["confidence_float"] if "confidence_float" in action else None
+    )
     # TODO: currently action intention and response are only used for Q&A actions, like input_text
     # When we start supporting click action, intention will be the reasoning for the click action (why take the action)
     intention = action["user_detail_query"] if "user_detail_query" in action else None
@@ -270,11 +286,17 @@ def parse_action(action: Dict[str, Any], scraped_page: ScrapedPage, data_extract
         base_action_dict["element_id"] = None
 
     if action_type == ActionType.TERMINATE:
-        return TerminateAction(**base_action_dict, errors=action["errors"] if "errors" in action else [])
+        return TerminateAction(
+            **base_action_dict, errors=action["errors"] if "errors" in action else []
+        )
 
     if action_type == ActionType.CLICK:
         file_url = action["file_url"] if "file_url" in action else None
-        return ClickAction(**base_action_dict, file_url=file_url, download=action.get("download", False))
+        return ClickAction(
+            **base_action_dict,
+            file_url=file_url,
+            download=action.get("download", False),
+        )
 
     if action_type == ActionType.INPUT_TEXT:
         return InputTextAction(**base_action_dict, text=action["text"])
@@ -298,7 +320,9 @@ def parse_action(action: Dict[str, Any], scraped_page: ScrapedPage, data_extract
         value = option.get("value")
         index = option.get("index")
         if label is None and value is None and index is None:
-            raise ValueError("At least one of 'label', 'value', or 'index' must be provided for a SelectOption")
+            raise ValueError(
+                "At least one of 'label', 'value', or 'index' must be provided for a SelectOption"
+            )
         return SelectOptionAction(
             **base_action_dict,
             option=SelectOption(
@@ -334,13 +358,19 @@ def parse_action(action: Dict[str, Any], scraped_page: ScrapedPage, data_extract
 
 
 def parse_actions(
-    task: Task, step_id: str, step_order: int, scraped_page: ScrapedPage, json_response: list[Dict[str, Any]]
+    task: Task,
+    step_id: str,
+    step_order: int,
+    scraped_page: ScrapedPage,
+    json_response: list[Dict[str, Any]],
 ) -> list[Action]:
     actions: list[Action] = []
     for idx, action in enumerate(json_response):
         try:
             action_instance = parse_action(
-                action=action, scraped_page=scraped_page, data_extraction_goal=task.data_extraction_goal
+                action=action,
+                scraped_page=scraped_page,
+                data_extraction_goal=task.data_extraction_goal,
             )
             action_instance.organization_id = task.organization_id
             action_instance.workflow_run_id = task.workflow_run_id
@@ -386,7 +416,9 @@ def parse_actions(
     # If there's no hash, we can fall back to normal operation
     all_element_ids = [action.element_id for action in actions if action.element_id]
     missing_element_ids = [
-        element_id for element_id in all_element_ids if element_id not in scraped_page.id_to_element_hash
+        element_id
+        for element_id in all_element_ids
+        if element_id not in scraped_page.id_to_element_hash
     ]
     if missing_element_ids:
         LOG.warning(

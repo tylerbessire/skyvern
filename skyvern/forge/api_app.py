@@ -64,20 +64,33 @@ def get_agent_app() -> FastAPI:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
 
     @app.exception_handler(SkyvernHTTPException)
-    async def handle_skyvern_http_exception(request: Request, exc: SkyvernHTTPException) -> JSONResponse:
-        return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
+    async def handle_skyvern_http_exception(
+        request: Request, exc: SkyvernHTTPException
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code, content={"detail": exc.message}
+        )
 
     @app.exception_handler(ValidationError)
-    async def handle_pydantic_validation_error(request: Request, exc: ValidationError) -> JSONResponse:
-        return JSONResponse(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, content={"detail": str(exc)})
+    async def handle_pydantic_validation_error(
+        request: Request, exc: ValidationError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": str(exc)},
+        )
 
     @app.exception_handler(Exception)
     async def unexpected_exception(request: Request, exc: Exception) -> JSONResponse:
         LOG.exception("Unexpected error in agent server.", exc_info=exc)
-        return JSONResponse(status_code=500, content={"error": f"Unexpected error: {exc}"})
+        return JSONResponse(
+            status_code=500, content={"error": f"Unexpected error: {exc}"}
+        )
 
     @app.middleware("http")
-    async def request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def request_middleware(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         curr_ctx = skyvern_context.current()
         if not curr_ctx:
             request_id = str(uuid.uuid4())

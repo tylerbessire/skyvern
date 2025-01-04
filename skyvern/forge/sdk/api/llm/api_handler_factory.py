@@ -50,7 +50,11 @@ class LLMAPIHandlerFactory:
             allowed_fails=llm_config.allowed_fails,
             allowed_fails_policy=llm_config.allowed_fails_policy,
             cooldown_time=llm_config.cooldown_time,
-            set_verbose=(False if SettingsManager.get_settings().is_cloud_environment() else llm_config.set_verbose),
+            set_verbose=(
+                False
+                if SettingsManager.get_settings().is_cloud_environment()
+                else llm_config.set_verbose
+            ),
             enable_pre_call_checks=True,
         )
         main_model_group = llm_config.main_model_group
@@ -89,7 +93,9 @@ class LLMAPIHandlerFactory:
                         data=screenshot,
                     )
 
-            messages = await llm_messages_builder(prompt, screenshots, llm_config.add_assistant_prefix)
+            messages = await llm_messages_builder(
+                prompt, screenshots, llm_config.add_assistant_prefix
+            )
             if step:
                 await app.ARTIFACT_MANAGER.create_artifact(
                     step=step,
@@ -103,9 +109,17 @@ class LLMAPIHandlerFactory:
                     ).encode("utf-8"),
                 )
             try:
-                LOG.info("Calling LLM API", llm_key=llm_key, model=llm_config.model_name)
-                response = await router.acompletion(model=main_model_group, messages=messages, **parameters)
-                LOG.info("LLM API call successful", llm_key=llm_key, model=llm_config.model_name)
+                LOG.info(
+                    "Calling LLM API", llm_key=llm_key, model=llm_config.model_name
+                )
+                response = await router.acompletion(
+                    model=main_model_group, messages=messages, **parameters
+                )
+                LOG.info(
+                    "LLM API call successful",
+                    llm_key=llm_key,
+                    model=llm_config.model_name,
+                )
             except litellm.exceptions.APIError as e:
                 raise LLMProviderErrorRetryableTask(llm_key) from e
             except ValueError as e:
@@ -131,16 +145,24 @@ class LLMAPIHandlerFactory:
                 )
                 llm_cost = litellm.completion_cost(completion_response=response)
                 prompt_tokens = response.get("usage", {}).get("prompt_tokens", 0)
-                completion_tokens = response.get("usage", {}).get("completion_tokens", 0)
+                completion_tokens = response.get("usage", {}).get(
+                    "completion_tokens", 0
+                )
                 await app.DATABASE.update_step(
                     task_id=step.task_id,
                     step_id=step.step_id,
                     organization_id=step.organization_id,
                     incremental_cost=llm_cost,
-                    incremental_input_tokens=prompt_tokens if prompt_tokens > 0 else None,
-                    incremental_output_tokens=completion_tokens if completion_tokens > 0 else None,
+                    incremental_input_tokens=(
+                        prompt_tokens if prompt_tokens > 0 else None
+                    ),
+                    incremental_output_tokens=(
+                        completion_tokens if completion_tokens > 0 else None
+                    ),
                 )
-            parsed_response = parse_api_response(response, llm_config.add_assistant_prefix)
+            parsed_response = parse_api_response(
+                response, llm_config.add_assistant_prefix
+            )
             if step:
                 await app.ARTIFACT_MANAGER.create_artifact(
                     step=step,
@@ -152,7 +174,9 @@ class LLMAPIHandlerFactory:
         return llm_api_handler_with_router_and_fallback
 
     @staticmethod
-    def get_llm_api_handler(llm_key: str, base_parameters: dict[str, Any] | None = None) -> LLMAPIHandler:
+    def get_llm_api_handler(
+        llm_key: str, base_parameters: dict[str, Any] | None = None
+    ) -> LLMAPIHandler:
         llm_config = LLMConfigRegistry.get_config(llm_key)
 
         if LLMConfigRegistry.is_router_config(llm_key):
@@ -191,7 +215,9 @@ class LLMAPIHandlerFactory:
             if not llm_config.supports_vision:
                 screenshots = None
 
-            messages = await llm_messages_builder(prompt, screenshots, llm_config.add_assistant_prefix)
+            messages = await llm_messages_builder(
+                prompt, screenshots, llm_config.add_assistant_prefix
+            )
             if step:
                 await app.ARTIFACT_MANAGER.create_artifact(
                     step=step,
@@ -210,14 +236,20 @@ class LLMAPIHandlerFactory:
                 # TODO (kerem): add a timeout to this call
                 # TODO (kerem): add a retry mechanism to this call (acompletion_with_retries)
                 # TODO (kerem): use litellm fallbacks? https://litellm.vercel.app/docs/tutorials/fallbacks#how-does-completion_with_fallbacks-work
-                LOG.info("Calling LLM API", llm_key=llm_key, model=llm_config.model_name)
+                LOG.info(
+                    "Calling LLM API", llm_key=llm_key, model=llm_config.model_name
+                )
                 response = await litellm.acompletion(
                     model=llm_config.model_name,
                     messages=messages,
                     timeout=SettingsManager.get_settings().LLM_CONFIG_TIMEOUT,
                     **active_parameters,
                 )
-                LOG.info("LLM API call successful", llm_key=llm_key, model=llm_config.model_name)
+                LOG.info(
+                    "LLM API call successful",
+                    llm_key=llm_key,
+                    model=llm_config.model_name,
+                )
             except litellm.exceptions.APIError as e:
                 raise LLMProviderErrorRetryableTask(llm_key) from e
             except CancelledError:
@@ -240,16 +272,24 @@ class LLMAPIHandlerFactory:
                 )
                 llm_cost = litellm.completion_cost(completion_response=response)
                 prompt_tokens = response.get("usage", {}).get("prompt_tokens", 0)
-                completion_tokens = response.get("usage", {}).get("completion_tokens", 0)
+                completion_tokens = response.get("usage", {}).get(
+                    "completion_tokens", 0
+                )
                 await app.DATABASE.update_step(
                     task_id=step.task_id,
                     step_id=step.step_id,
                     organization_id=step.organization_id,
                     incremental_cost=llm_cost,
-                    incremental_input_tokens=prompt_tokens if prompt_tokens > 0 else None,
-                    incremental_output_tokens=completion_tokens if completion_tokens > 0 else None,
+                    incremental_input_tokens=(
+                        prompt_tokens if prompt_tokens > 0 else None
+                    ),
+                    incremental_output_tokens=(
+                        completion_tokens if completion_tokens > 0 else None
+                    ),
                 )
-            parsed_response = parse_api_response(response, llm_config.add_assistant_prefix)
+            parsed_response = parse_api_response(
+                response, llm_config.add_assistant_prefix
+            )
             if step:
                 await app.ARTIFACT_MANAGER.create_artifact(
                     step=step,

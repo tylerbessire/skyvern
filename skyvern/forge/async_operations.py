@@ -28,7 +28,9 @@ class AsyncOperation:
         - collect info based on the html/DOM and send data to your server
     """
 
-    def __init__(self, task_id: str, operation_type: str, agent_phase: AgentPhase, page: Page) -> None:
+    def __init__(
+        self, task_id: str, operation_type: str, agent_phase: AgentPhase, page: Page
+    ) -> None:
         """
         :param task_id: task_id of the task
         :param operation_type: it's the custom type of the operation.
@@ -61,14 +63,20 @@ class AsyncOperation:
 
 
 class AsyncOperationPool:
-    _operations: dict[str, dict[AgentPhase, AsyncOperation]] = {}  # task_id: {agent_phase: operation}
+    _operations: dict[str, dict[AgentPhase, AsyncOperation]] = (
+        {}
+    )  # task_id: {agent_phase: operation}
 
     # use _aio_tasks to ensure we're only execution one aio task for the same operation_type
-    _aio_tasks: dict[str, dict[str, asyncio.Task]] = {}  # task_id: {operation_type: aio_task}
+    _aio_tasks: dict[str, dict[str, asyncio.Task]] = (
+        {}
+    )  # task_id: {operation_type: aio_task}
 
     def _add_operation(self, task_id: str, operation: AsyncOperation) -> None:
         if operation.agent_phase not in VALID_AGENT_PHASES:
-            raise ValueError(f"operation's agent phase {operation.agent_phase} is not valid")
+            raise ValueError(
+                f"operation's agent phase {operation.agent_phase} is not valid"
+            )
         if task_id not in self._operations:
             self._operations[task_id] = {}
         self._operations[task_id][operation.agent_phase] = operation
@@ -80,7 +88,9 @@ class AsyncOperationPool:
         for operation in operations:
             self._add_operation(task_id, operation)
 
-    def _get_operation(self, task_id: str, operation_type: AgentPhase) -> AsyncOperation | None:
+    def _get_operation(
+        self, task_id: str, operation_type: AgentPhase
+    ) -> AsyncOperation | None:
         return self._operations.get(task_id, {}).get(operation_type, None)
 
     def remove_operations(self, task_id: str) -> None:
@@ -91,12 +101,18 @@ class AsyncOperationPool:
         """
         Get all the running/pending aio tasks for the given task_id
         """
-        return [aio_task for aio_task in self._aio_tasks.get(task_id, {}).values() if not aio_task.done()]
+        return [
+            aio_task
+            for aio_task in self._aio_tasks.get(task_id, {}).values()
+            if not aio_task.done()
+        ]
 
     def get_aio_task(self, task_id: str, operation_type: str) -> asyncio.Task | None:
         return self._aio_tasks.get(task_id, {}).get(operation_type, None)
 
-    async def wait_for_task(self, task_id: str, operation_type: str, timeout: float | None = None) -> None:
+    async def wait_for_task(
+        self, task_id: str, operation_type: str, timeout: float | None = None
+    ) -> None:
         running_task = self.get_aio_task(task_id=task_id, operation_type=operation_type)
         if running_task and not running_task.done():
             LOG.info(
@@ -138,7 +154,13 @@ class AsyncOperationPool:
     async def remove_task(self, task_id: str) -> None:
         try:
             async with asyncio.timeout(30):
-                await asyncio.gather(*[aio_task for aio_task in self.get_aio_tasks(task_id) if not aio_task.done()])
+                await asyncio.gather(
+                    *[
+                        aio_task
+                        for aio_task in self.get_aio_tasks(task_id)
+                        if not aio_task.done()
+                    ]
+                )
         except asyncio.TimeoutError:
             LOG.error(
                 f"Timeout (30s) while waiting for pending async tasks for task_id={task_id}",

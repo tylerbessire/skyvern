@@ -35,9 +35,13 @@ class ArtifactManager:
         #       3. update artifact in db with the URI
         #       4. store artifact in storage
         if data is None and path is None:
-            raise ValueError("Either data or path must be provided to create an artifact.")
+            raise ValueError(
+                "Either data or path must be provided to create an artifact."
+            )
         if data and path:
-            raise ValueError("Both data and path cannot be provided to create an artifact.")
+            raise ValueError(
+                "Both data and path cannot be provided to create an artifact."
+            )
         artifact_id = generate_artifact_id()
         uri = app.STORAGE.build_uri(artifact_id, step, artifact_type)
         artifact = await app.DATABASE.create_artifact(
@@ -54,12 +58,16 @@ class ArtifactManager:
             self.upload_aiotasks_map[step.task_id].append(aio_task)
         elif path:
             # Fire and forget
-            aio_task = asyncio.create_task(app.STORAGE.store_artifact_from_path(artifact, path))
+            aio_task = asyncio.create_task(
+                app.STORAGE.store_artifact_from_path(artifact, path)
+            )
             self.upload_aiotasks_map[step.task_id].append(aio_task)
 
         return artifact_id
 
-    async def update_artifact_data(self, artifact_id: str | None, organization_id: str | None, data: bytes) -> None:
+    async def update_artifact_data(
+        self, artifact_id: str | None, organization_id: str | None, data: bytes
+    ) -> None:
         if not artifact_id or not organization_id:
             return None
         artifact = await app.DATABASE.get_artifact_by_id(artifact_id, organization_id)
@@ -83,7 +91,11 @@ class ArtifactManager:
             st = time.time()
             async with asyncio.timeout(30):
                 await asyncio.gather(
-                    *[aio_task for aio_task in self.upload_aiotasks_map[task_id] if not aio_task.done()]
+                    *[
+                        aio_task
+                        for aio_task in self.upload_aiotasks_map[task_id]
+                        if not aio_task.done()
+                    ]
                 )
             LOG.info(
                 f"S3 upload tasks for task_id={task_id} completed in {time.time() - st:.2f}s",

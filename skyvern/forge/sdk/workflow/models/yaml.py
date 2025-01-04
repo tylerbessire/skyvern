@@ -217,7 +217,9 @@ PARAMETER_YAML_SUBCLASSES = (
     | ContextParameterYAML
     | OutputParameterYAML
 )
-PARAMETER_YAML_TYPES = Annotated[PARAMETER_YAML_SUBCLASSES, Field(discriminator="parameter_type")]
+PARAMETER_YAML_TYPES = Annotated[
+    PARAMETER_YAML_SUBCLASSES, Field(discriminator="parameter_type")
+]
 
 BLOCK_YAML_SUBCLASSES = (
     TaskBlockYAML

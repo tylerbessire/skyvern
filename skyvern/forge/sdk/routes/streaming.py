@@ -41,7 +41,9 @@ async def task_stream(
         try:
             await websocket.send_text("Invalid credential provided")
         except ConnectionClosedOK:
-            LOG.info("ConnectionClosedOK error while sending invalid credential message")
+            LOG.info(
+                "ConnectionClosedOK error while sending invalid credential message"
+            )
         return
 
     LOG.info("Started task streaming", task_id=task_id, organization_id=organization_id)
@@ -51,9 +53,13 @@ async def task_stream(
     try:
         while True:
             # if no activity for 5 minutes, close the connection
-            if (datetime.utcnow() - last_activity_timestamp).total_seconds() > STREAMING_TIMEOUT:
+            if (
+                datetime.utcnow() - last_activity_timestamp
+            ).total_seconds() > STREAMING_TIMEOUT:
                 LOG.info(
-                    "No activity for 5 minutes. Closing connection", task_id=task_id, organization_id=organization_id
+                    "No activity for 5 minutes. Closing connection",
+                    task_id=task_id,
+                    organization_id=organization_id,
                 )
                 await websocket.send_json(
                     {
@@ -63,9 +69,15 @@ async def task_stream(
                 )
                 return
 
-            task = await app.DATABASE.get_task(task_id=task_id, organization_id=organization_id)
+            task = await app.DATABASE.get_task(
+                task_id=task_id, organization_id=organization_id
+            )
             if not task:
-                LOG.info("Task not found. Closing connection", task_id=task_id, organization_id=organization_id)
+                LOG.info(
+                    "Task not found. Closing connection",
+                    task_id=task_id,
+                    organization_id=organization_id,
+                )
                 await websocket.send_json(
                     {
                         "task_id": task_id,
@@ -92,7 +104,9 @@ async def task_stream(
                 file_name = f"{task_id}.png"
                 if task.workflow_run_id:
                     file_name = f"{task.workflow_run_id}.png"
-                screenshot = await app.STORAGE.get_streaming_file(organization_id, file_name)
+                screenshot = await app.STORAGE.get_streaming_file(
+                    organization_id, file_name
+                )
                 if screenshot:
                     encoded_screenshot = base64.b64encode(screenshot).decode("utf-8")
                     await websocket.send_json(
@@ -108,14 +122,31 @@ async def task_stream(
     except ValidationError as e:
         await websocket.send_text(f"Invalid data: {e}")
     except WebSocketDisconnect:
-        LOG.info("WebSocket connection closed", task_id=task_id, organization_id=organization_id)
+        LOG.info(
+            "WebSocket connection closed",
+            task_id=task_id,
+            organization_id=organization_id,
+        )
     except ConnectionClosedOK:
-        LOG.info("ConnectionClosedOK error while streaming", task_id=task_id, organization_id=organization_id)
+        LOG.info(
+            "ConnectionClosedOK error while streaming",
+            task_id=task_id,
+            organization_id=organization_id,
+        )
         return
     except Exception:
-        LOG.warning("Error while streaming", task_id=task_id, organization_id=organization_id, exc_info=True)
+        LOG.warning(
+            "Error while streaming",
+            task_id=task_id,
+            organization_id=organization_id,
+            exc_info=True,
+        )
         return
-    LOG.info("WebSocket connection closed successfully", task_id=task_id, organization_id=organization_id)
+    LOG.info(
+        "WebSocket connection closed successfully",
+        task_id=task_id,
+        organization_id=organization_id,
+    )
     return
 
 
@@ -132,18 +163,25 @@ async def workflow_run_streaming(
             await websocket.send_text("No valid credential provided")
             return
     except ConnectionClosedOK:
-        LOG.info("WofklowRun Streaming: ConnectionClosedOK error. Streaming won't start")
+        LOG.info(
+            "WofklowRun Streaming: ConnectionClosedOK error. Streaming won't start"
+        )
         return
 
     try:
         organization = await get_current_org(x_api_key=apikey, authorization=token)
         organization_id = organization.organization_id
     except Exception:
-        LOG.exception("WofklowRun Streaming: Error while getting organization", workflow_run_id=workflow_run_id)
+        LOG.exception(
+            "WofklowRun Streaming: Error while getting organization",
+            workflow_run_id=workflow_run_id,
+        )
         try:
             await websocket.send_text("Invalid credential provided")
         except ConnectionClosedOK:
-            LOG.info("WofklowRun Streaming: ConnectionClosedOK error while sending invalid credential message")
+            LOG.info(
+                "WofklowRun Streaming: ConnectionClosedOK error while sending invalid credential message"
+            )
         return
 
     LOG.info(
@@ -157,7 +195,9 @@ async def workflow_run_streaming(
     try:
         while True:
             # if no activity for 5 minutes, close the connection
-            if (datetime.utcnow() - last_activity_timestamp).total_seconds() > STREAMING_TIMEOUT:
+            if (
+                datetime.utcnow() - last_activity_timestamp
+            ).total_seconds() > STREAMING_TIMEOUT:
                 LOG.info(
                     "WofklowRun Streaming: No activity for 5 minutes. Closing connection",
                     workflow_run_id=workflow_run_id,
@@ -171,7 +211,9 @@ async def workflow_run_streaming(
                 )
                 return
 
-            workflow_run = await app.DATABASE.get_workflow_run(workflow_run_id=workflow_run_id)
+            workflow_run = await app.DATABASE.get_workflow_run(
+                workflow_run_id=workflow_run_id
+            )
             if not workflow_run or workflow_run.organization_id != organization_id:
                 LOG.info(
                     "WofklowRun Streaming: Workflow not found",
@@ -206,7 +248,9 @@ async def workflow_run_streaming(
 
             if workflow_run.status == WorkflowRunStatus.running:
                 file_name = f"{workflow_run_id}.png"
-                screenshot = await app.STORAGE.get_streaming_file(organization_id, file_name)
+                screenshot = await app.STORAGE.get_streaming_file(
+                    organization_id, file_name
+                )
                 if screenshot:
                     encoded_screenshot = base64.b64encode(screenshot).decode("utf-8")
                     await websocket.send_json(

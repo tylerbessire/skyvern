@@ -68,9 +68,15 @@ class DetailedAgentStepOutput(BaseModel):
             llm_response=self.llm_response,
             actions=self.actions,
             action_results=self.action_results,
-            actions_and_results=None
-            if self.actions_and_results is None
-            else [(action, result) for action, result in self.actions_and_results if result],
+            actions_and_results=(
+                None
+                if self.actions_and_results is None
+                else [
+                    (action, result)
+                    for action, result in self.actions_and_results
+                    if result
+                ]
+            ),
             step_exception=self.step_exception,
         )
 
@@ -78,7 +84,13 @@ class DetailedAgentStepOutput(BaseModel):
         clean_output = self.get_clean_detailed_output()
 
         return AgentStepOutput(
-            action_results=clean_output.action_results if clean_output.action_results else [],
-            actions_and_results=(clean_output.actions_and_results if clean_output.actions_and_results else []),
+            action_results=(
+                clean_output.action_results if clean_output.action_results else []
+            ),
+            actions_and_results=(
+                clean_output.actions_and_results
+                if clean_output.actions_and_results
+                else []
+            ),
             errors=clean_output.extract_errors(),
         )

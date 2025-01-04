@@ -15,7 +15,9 @@ LOGGING_LEVEL_MAP: dict[str, int] = {
 }
 
 
-def add_kv_pairs_to_msg(logger: logging.Logger, method_name: str, event_dict: EventDict) -> EventDict:
+def add_kv_pairs_to_msg(
+    logger: logging.Logger, method_name: str, event_dict: EventDict
+) -> EventDict:
     """
     A custom processor to add key-value pairs to the 'msg' field.
     """
@@ -44,7 +46,9 @@ def add_kv_pairs_to_msg(logger: logging.Logger, method_name: str, event_dict: Ev
     msg_field = event_dict.get("msg", "")
 
     # Add key-value pairs
-    kv_pairs = {k: v for k, v in event_dict.items() if k not in ["msg", "timestamp", "level"]}
+    kv_pairs = {
+        k: v for k, v in event_dict.items() if k not in ["msg", "timestamp", "level"]
+    }
     if kv_pairs:
         additional_info = ", ".join(f"{k}={v}" for k, v in kv_pairs.items())
         msg_field += f" | {additional_info}"
@@ -81,7 +85,9 @@ def setup_logger() -> None:
         if SettingsManager.get_settings().JSON_LOGGING
         else []
     )
-    LOG_LEVEL_VAL = LOGGING_LEVEL_MAP.get(SettingsManager.get_settings().LOG_LEVEL, logging.INFO)
+    LOG_LEVEL_VAL = LOGGING_LEVEL_MAP.get(
+        SettingsManager.get_settings().LOG_LEVEL, logging.INFO
+    )
 
     structlog.configure(
         wrapper_class=structlog.make_filtering_bound_logger(LOG_LEVEL_VAL),

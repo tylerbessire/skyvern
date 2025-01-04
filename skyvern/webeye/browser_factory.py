@@ -112,7 +112,9 @@ class BrowserContextFactory:
             creator = cls._creators.get(browser_type)
             if not creator:
                 raise UnknownBrowserType(browser_type)
-            browser_context, browser_artifacts, cleanup_func = await creator(playwright, **kwargs)
+            browser_context, browser_artifacts, cleanup_func = await creator(
+                playwright, **kwargs
+            )
             return browser_context, browser_artifacts, cleanup_func
         except UnknownBrowserType as e:
             raise e
@@ -120,7 +122,9 @@ class BrowserContextFactory:
             raise UnknownErrorWhileCreatingBrowserContext(browser_type, e) from e
 
     @classmethod
-    def set_validate_browser_context(cls, validator: Callable[[Page], Awaitable[bool]]) -> None:
+    def set_validate_browser_context(
+        cls, validator: Callable[[Page], Awaitable[bool]]
+    ) -> None:
         cls._validator = validator
 
     @classmethod
@@ -147,8 +151,12 @@ async def _create_headless_chromium(
     playwright: Playwright, **kwargs: dict
 ) -> tuple[BrowserContext, BrowserArtifacts, BrowserCleanupFunc]:
     browser_args = BrowserContextFactory.build_browser_args()
-    browser_artifacts = BrowserContextFactory.build_browser_artifacts(har_path=browser_args["record_har_path"])
-    browser_context = await playwright.chromium.launch_persistent_context(**browser_args)
+    browser_artifacts = BrowserContextFactory.build_browser_artifacts(
+        har_path=browser_args["record_har_path"]
+    )
+    browser_context = await playwright.chromium.launch_persistent_context(
+        **browser_args
+    )
     return browser_context, browser_artifacts, None
 
 
@@ -161,8 +169,12 @@ async def _create_headful_chromium(
             "headless": False,
         }
     )
-    browser_artifacts = BrowserContextFactory.build_browser_artifacts(har_path=browser_args["record_har_path"])
-    browser_context = await playwright.chromium.launch_persistent_context(**browser_args)
+    browser_artifacts = BrowserContextFactory.build_browser_artifacts(
+        har_path=browser_args["record_har_path"]
+    )
+    browser_context = await playwright.chromium.launch_persistent_context(
+        **browser_args
+    )
     return browser_context, browser_artifacts, None
 
 
@@ -251,7 +263,9 @@ class BrowserState:
                         LOG.info(f"Navigating page to {url} and waiting for 5 seconds")
                         try:
                             start_time = time.time()
-                            await page.goto(url, timeout=settings.BROWSER_LOADING_TIMEOUT_MS)
+                            await page.goto(
+                                url, timeout=settings.BROWSER_LOADING_TIMEOUT_MS
+                            )
                             end_time = time.time()
                             LOG.info(
                                 "Page loading time",
@@ -264,7 +278,9 @@ class BrowserState:
                                 f"Error while navigating to url: {str(playright_error)}",
                                 exc_info=True,
                             )
-                            raise FailedToNavigateToUrl(url=url, error_message=str(playright_error))
+                            raise FailedToNavigateToUrl(
+                                url=url, error_message=str(playright_error)
+                            )
                         success = True
                         LOG.info(f"Successfully went to {url}")
                     else:
@@ -277,14 +293,20 @@ class BrowserState:
                     # Wait for 5 seconds before retrying
                     await asyncio.sleep(5)
                     if retries >= 3:
-                        LOG.exception(f"Failed to create a new page after 3 retries: {str(e)}")
+                        LOG.exception(
+                            f"Failed to create a new page after 3 retries: {str(e)}"
+                        )
                         raise e
                     LOG.info(f"Retrying to create a new page. Retry count: {retries}")
 
     async def get_working_page(self) -> Page | None:
         # HACK: currently, assuming the last page is always the working page.
         # Need to refactor this logic when we want to manipulate multi pages together
-        if self.__page is None or self.browser_context is None or len(self.browser_context.pages) == 0:
+        if (
+            self.__page is None
+            or self.browser_context is None
+            or len(self.browser_context.pages) == 0
+        ):
             return None
 
         last_page = self.browser_context.pages[-1]
@@ -299,14 +321,19 @@ class BrowserState:
             return
         if len(self.browser_artifacts.video_artifacts) > index:
             if self.browser_artifacts.video_artifacts[index].video_path is None:
-                self.browser_artifacts.video_artifacts[index].video_path = await page.video.path()
+                self.browser_artifacts.video_artifacts[index].video_path = (
+                    await page.video.path()
+                )
             return
 
         target_lenght = index + 1
         self.browser_artifacts.video_artifacts.extend(
-            [VideoArtifact()] * (target_lenght - len(self.browser_artifacts.video_artifacts))
+            [VideoArtifact()]
+            * (target_lenght - len(self.browser_artifacts.video_artifacts))
         )
-        self.browser_artifacts.video_artifacts[index].video_path = await page.video.path()
+        self.browser_artifacts.video_artifacts[index].video_path = (
+            await page.video.path()
+        )
         return
 
     async def get_or_create_page(
@@ -343,7 +370,9 @@ class BrowserState:
             )
         await self.__assert_page()
 
-        if not await BrowserContextFactory.validate_browser_context(await self.get_working_page()):
+        if not await BrowserContextFactory.validate_browser_context(
+            await self.get_working_page()
+        ):
             await self.close_current_open_page()
             await self.check_and_fix_state(
                 url=url,
@@ -402,6 +431,10 @@ class BrowserState:
             await self.pw.stop()
             LOG.info("Playwright is stopped")
 
-    async def take_screenshot(self, full_page: bool = False, file_path: str | None = None) -> bytes:
+    async def take_screenshot(
+        self, full_page: bool = False, file_path: str | None = None
+    ) -> bytes:
         page = await self.__assert_page()
-        return await SkyvernFrame.take_screenshot(page=page, full_page=full_page, file_path=file_path)
+        return await SkyvernFrame.take_screenshot(
+            page=page, full_page=full_page, file_path=file_path
+        )

@@ -11,7 +11,9 @@ from skyvern.webeye.scraper.scraper import ScrapedPage
 LOG = structlog.get_logger()
 
 
-async def retrieve_action_plan(task: Task, step: Step, scraped_page: ScrapedPage) -> list[Action]:
+async def retrieve_action_plan(
+    task: Task, step: Step, scraped_page: ScrapedPage
+) -> list[Action]:
     try:
         return await _retrieve_action_plan(task, step, scraped_page)
     except Exception as e:
@@ -19,7 +21,9 @@ async def retrieve_action_plan(task: Task, step: Step, scraped_page: ScrapedPage
         return []
 
 
-async def _retrieve_action_plan(task: Task, step: Step, scraped_page: ScrapedPage) -> list[Action]:
+async def _retrieve_action_plan(
+    task: Task, step: Step, scraped_page: ScrapedPage
+) -> list[Action]:
     # V0: use the previous action plan if there is a completed task with the same url and navigation goal
     # get completed task with the same url and navigation goal
     # TODO(kerem): don't use step_order, get all the previous actions instead
@@ -30,7 +34,9 @@ async def _retrieve_action_plan(task: Task, step: Step, scraped_page: ScrapedPag
 
     # Get the existing actions for this task from the database. Then find the actions that are already executed by looking at
     # the source_action_id field for this task's actions.
-    previous_actions = await app.DATABASE.get_previous_actions_for_task(task_id=task.task_id)
+    previous_actions = await app.DATABASE.get_previous_actions_for_task(
+        task_id=task.task_id
+    )
 
     executed_cached_actions = []
     remaining_cached_actions = []
@@ -46,7 +52,9 @@ async def _retrieve_action_plan(task: Task, step: Step, scraped_page: ScrapedPag
                     return []
 
                 action_id_to_match = (
-                    cached_action.source_action_id if cached_action.source_action_id else cached_action.action_id
+                    cached_action.source_action_id
+                    if cached_action.source_action_id
+                    else cached_action.action_id
                 )
                 if should_be_matching_action.source_action_id == action_id_to_match:
                     executed_cached_actions.append(cached_action)
@@ -85,7 +93,9 @@ async def _retrieve_action_plan(task: Task, step: Step, scraped_page: ScrapedPag
             found_element_with_no_hash = True
             continue
 
-        matching_element_ids = scraped_page.hash_to_element_ids.get(cached_action.skyvern_element_hash)
+        matching_element_ids = scraped_page.hash_to_element_ids.get(
+            cached_action.skyvern_element_hash
+        )
         if matching_element_ids and len(matching_element_ids) == 1:
             cached_actions_to_execute.append(cached_action)
             continue
@@ -99,7 +109,10 @@ async def _retrieve_action_plan(task: Task, step: Step, scraped_page: ScrapedPag
             )
             break
         else:
-            LOG.warning("No element found with the hash", element_hash=cached_action.skyvern_element_hash)
+            LOG.warning(
+                "No element found with the hash",
+                element_hash=cached_action.skyvern_element_hash,
+            )
             break
 
     # If there are no items in the list we just built, we need to revert back to no-cache mode. Return empty list.
@@ -113,7 +126,9 @@ async def _retrieve_action_plan(task: Task, step: Step, scraped_page: ScrapedPag
         updated_action = cached_action.model_copy()
         updated_action.status = ActionStatus.pending
         updated_action.source_action_id = (
-            cached_action.source_action_id if cached_action.source_action_id else cached_action.action_id
+            cached_action.source_action_id
+            if cached_action.source_action_id
+            else cached_action.action_id
         )
         updated_action.workflow_run_id = task.workflow_run_id
         updated_action.task_id = task.task_id
@@ -125,11 +140,15 @@ async def _retrieve_action_plan(task: Task, step: Step, scraped_page: ScrapedPag
 
         # Update the element id with the element id from the current scraped page, matched by element hash
         if cached_action.skyvern_element_hash:
-            matching_element_ids = scraped_page.hash_to_element_ids.get(cached_action.skyvern_element_hash)
+            matching_element_ids = scraped_page.hash_to_element_ids.get(
+                cached_action.skyvern_element_hash
+            )
             if matching_element_ids and len(matching_element_ids) == 1:
                 matching_element_id = matching_element_ids[0]
                 updated_action.element_id = matching_element_id
-                updated_action.skyvern_element_data = scraped_page.id_to_element_dict.get(matching_element_id)
+                updated_action.skyvern_element_data = (
+                    scraped_page.id_to_element_dict.get(matching_element_id)
+                )
             else:
                 raise CachedActionPlanError(
                     "All elements with either no hash or multiple hashes should have been already filtered out"
@@ -158,19 +177,26 @@ async def personalize_actions(
     actions_queries: list[tuple[Action, str | None]],
     scraped_page: ScrapedPage,
 ) -> list[Action]:
-    queries_and_answers: dict[str, str | None] = {query: None for _, query in actions_queries if query}
+    queries_and_answers: dict[str, str | None] = {
+        query: None for _, query in actions_queries if query
+    }
 
     answered_queries: dict[str, str] = {}
     if queries_and_answers:
         # Call LLM to get answers for the queries only if there are queries to answer
         answered_queries = await get_user_detail_answers(
-            task=task, step=step, scraped_page=scraped_page, queries_and_answers=queries_and_answers
+            task=task,
+            step=step,
+            scraped_page=scraped_page,
+            queries_and_answers=queries_and_answers,
         )
 
     personalized_actions = []
     for action, query in actions_queries:
         if query and (personalized_answer := answered_queries.get(query)):
-            personalized_actions.append(personalize_action(action, query, personalized_answer))
+            personalized_actions.append(
+                personalize_action(action, query, personalized_answer)
+            )
         else:
             personalized_actions.append(action)
 
@@ -178,7 +204,10 @@ async def personalize_actions(
 
 
 async def get_user_detail_answers(
-    task: Task, step: Step, scraped_page: ScrapedPage, queries_and_answers: dict[str, str | None]
+    task: Task,
+    step: Step,
+    scraped_page: ScrapedPage,
+    queries_and_answers: dict[str, str | None],
 ) -> dict[str, str]:
     try:
         question_answering_prompt = prompt_engine.load_prompt(
@@ -212,8 +241,15 @@ def personalize_action(action: Action, query: str, answer: str) -> Action:
     return action
 
 
-def check_for_unsupported_actions(actions_queries: list[tuple[Action, str | None]]) -> None:
-    supported_actions = [ActionType.INPUT_TEXT, ActionType.WAIT, ActionType.CLICK, ActionType.COMPLETE]
+def check_for_unsupported_actions(
+    actions_queries: list[tuple[Action, str | None]]
+) -> None:
+    supported_actions = [
+        ActionType.INPUT_TEXT,
+        ActionType.WAIT,
+        ActionType.CLICK,
+        ActionType.COMPLETE,
+    ]
     supported_actions_with_query = [ActionType.INPUT_TEXT]
     for action, query in actions_queries:
         if action.action_type not in supported_actions:

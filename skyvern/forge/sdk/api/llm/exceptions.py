@@ -7,7 +7,9 @@ class BaseLLMError(SkyvernException):
 
 class MissingLLMProviderEnvVarsError(BaseLLMError):
     def __init__(self, llm_key: str, missing_env_vars: list[str]) -> None:
-        super().__init__(f"Environment variables {','.join(missing_env_vars)} are required for LLMProvider {llm_key}")
+        super().__init__(
+            f"Environment variables {','.join(missing_env_vars)} are required for LLMProvider {llm_key}"
+        )
 
 
 class EmptyLLMResponseError(BaseLLMError):

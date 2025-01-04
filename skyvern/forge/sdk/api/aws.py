@@ -22,7 +22,9 @@ def execute_with_async_client(client_type: AWSClientType) -> Callable:
             self = args[0]
             assert isinstance(self, AsyncAWSClient)
             session = aioboto3.Session()
-            async with session.client(client_type, region_name=SettingsManager.get_settings().AWS_REGION) as client:
+            async with session.client(
+                client_type, region_name=SettingsManager.get_settings().AWS_REGION
+            ) as client:
                 return await f(*args, client=client, **kwargs)
 
         return wrapper
@@ -32,7 +34,9 @@ def execute_with_async_client(client_type: AWSClientType) -> Callable:
 
 class AsyncAWSClient:
     @execute_with_async_client(client_type=AWSClientType.SECRETS_MANAGER)
-    async def get_secret(self, secret_name: str, client: AioBaseClient = None) -> str | None:
+    async def get_secret(
+        self, secret_name: str, client: AioBaseClient = None
+    ) -> str | None:
         try:
             response = await client.get_secret_value(SecretId=secret_name)
             return response["SecretString"]
@@ -41,14 +45,20 @@ class AsyncAWSClient:
                 error_code = e.response["Error"]["Code"]  # type: ignore
             except Exception:
                 error_code = "failed-to-get-error-code"
-            LOG.exception("Failed to get secret.", secret_name=secret_name, error_code=error_code)
+            LOG.exception(
+                "Failed to get secret.", secret_name=secret_name, error_code=error_code
+            )
             return None
 
     @execute_with_async_client(client_type=AWSClientType.S3)
-    async def upload_file(self, uri: str, data: bytes, client: AioBaseClient = None) -> str | None:
+    async def upload_file(
+        self, uri: str, data: bytes, client: AioBaseClient = None
+    ) -> str | None:
         try:
             parsed_uri = S3Uri(uri)
-            await client.put_object(Body=data, Bucket=parsed_uri.bucket, Key=parsed_uri.key)
+            await client.put_object(
+                Body=data, Bucket=parsed_uri.bucket, Key=parsed_uri.key
+            )
             LOG.debug("Upload file success", uri=uri)
             return uri
         except Exception:
@@ -56,7 +66,9 @@ class AsyncAWSClient:
             return None
 
     @execute_with_async_client(client_type=AWSClientType.S3)
-    async def upload_file_stream(self, uri: str, file_obj: IO[bytes], client: AioBaseClient = None) -> str | None:
+    async def upload_file_stream(
+        self, uri: str, file_obj: IO[bytes], client: AioBaseClient = None
+    ) -> str | None:
         try:
             parsed_uri = S3Uri(uri)
             await client.upload_fileobj(file_obj, parsed_uri.bucket, parsed_uri.key)
@@ -67,7 +79,9 @@ class AsyncAWSClient:
             return None
 
     @execute_with_async_client(client_type=AWSClientType.S3)
-    async def upload_file_from_path(self, uri: str, file_path: str, client: AioBaseClient = None) -> None:
+    async def upload_file_from_path(
+        self, uri: str, file_path: str, client: AioBaseClient = None
+    ) -> None:
         try:
             parsed_uri = S3Uri(uri)
             await client.upload_file(file_path, parsed_uri.bucket, parsed_uri.key)
@@ -76,10 +90,14 @@ class AsyncAWSClient:
             LOG.exception("S3 upload failed.", uri=uri)
 
     @execute_with_async_client(client_type=AWSClientType.S3)
-    async def download_file(self, uri: str, client: AioBaseClient = None, log_exception: bool = True) -> bytes | None:
+    async def download_file(
+        self, uri: str, client: AioBaseClient = None, log_exception: bool = True
+    ) -> bytes | None:
         try:
             parsed_uri = S3Uri(uri)
-            response = await client.get_object(Bucket=parsed_uri.bucket, Key=parsed_uri.key)
+            response = await client.get_object(
+                Bucket=parsed_uri.bucket, Key=parsed_uri.key
+            )
             return await response["Body"].read()
         except Exception:
             if log_exception:
@@ -87,7 +105,9 @@ class AsyncAWSClient:
             return None
 
     @execute_with_async_client(client_type=AWSClientType.S3)
-    async def create_presigned_urls(self, uris: list[str], client: AioBaseClient = None) -> list[str] | None:
+    async def create_presigned_urls(
+        self, uris: list[str], client: AioBaseClient = None
+    ) -> list[str] | None:
         presigned_urls = []
         try:
             for uri in uris:

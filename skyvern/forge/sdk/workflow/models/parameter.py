@@ -46,7 +46,9 @@ class AWSSecretParameter(Parameter):
 
 
 class BitwardenLoginCredentialParameter(Parameter):
-    parameter_type: Literal[ParameterType.BITWARDEN_LOGIN_CREDENTIAL] = ParameterType.BITWARDEN_LOGIN_CREDENTIAL
+    parameter_type: Literal[ParameterType.BITWARDEN_LOGIN_CREDENTIAL] = (
+        ParameterType.BITWARDEN_LOGIN_CREDENTIAL
+    )
     # parameter fields
     bitwarden_login_credential_parameter_id: str
     workflow_id: str
@@ -91,7 +93,9 @@ class BitwardenSensitiveInformationParameter(Parameter):
 
 class BitwardenCreditCardDataParameter(Parameter):
     model_config = ConfigDict(from_attributes=True)
-    parameter_type: Literal[ParameterType.BITWARDEN_CREDIT_CARD_DATA] = ParameterType.BITWARDEN_CREDIT_CARD_DATA
+    parameter_type: Literal[ParameterType.BITWARDEN_CREDIT_CARD_DATA] = (
+        ParameterType.BITWARDEN_CREDIT_CARD_DATA
+    )
     # parameter fields
     bitwarden_credit_card_data_parameter_id: str
     workflow_id: str
@@ -116,7 +120,9 @@ class WorkflowParameterType(StrEnum):
     JSON = "json"
     FILE_URL = "file_url"
 
-    def convert_value(self, value: Any) -> str | int | float | bool | dict | list | None:
+    def convert_value(
+        self, value: Any
+    ) -> str | int | float | bool | dict | list | None:
         if value is None:
             return None
         try:
@@ -131,14 +137,18 @@ class WorkflowParameterType(StrEnum):
                     return value
                 lower_case = str(value).lower()
                 if lower_case in ["true", "false", "1", "0"]:
-                    raise InvalidWorkflowParameter(expected_parameter_type=self, value=str(value))
+                    raise InvalidWorkflowParameter(
+                        expected_parameter_type=self, value=str(value)
+                    )
                 return lower_case in ["true", "1"]
             elif self == WorkflowParameterType.JSON:
                 return json.loads(value)
             elif self == WorkflowParameterType.FILE_URL:
                 return value
         except Exception:
-            raise InvalidWorkflowParameter(expected_parameter_type=self, value=str(value))
+            raise InvalidWorkflowParameter(
+                expected_parameter_type=self, value=str(value)
+            )
 
 
 class WorkflowParameter(Parameter):

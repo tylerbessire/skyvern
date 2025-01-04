@@ -15,10 +15,14 @@ LOG = structlog.get_logger()
 
 
 class LocalStorage(BaseStorage):
-    def __init__(self, artifact_path: str = SettingsManager.get_settings().ARTIFACT_STORAGE_PATH) -> None:
+    def __init__(
+        self, artifact_path: str = SettingsManager.get_settings().ARTIFACT_STORAGE_PATH
+    ) -> None:
         self.artifact_path = artifact_path
 
-    def build_uri(self, artifact_id: str, step: Step, artifact_type: ArtifactType) -> str:
+    def build_uri(
+        self, artifact_id: str, step: Step, artifact_type: ArtifactType
+    ) -> str:
         file_ext = FILE_EXTENTSION_MAP[artifact_type]
         return f"file://{self.artifact_path}/{step.task_id}/{step.order:02d}_{step.retry_index}_{step.step_id}/{datetime.utcnow().isoformat()}_{artifact_id}_{artifact_type}.{file_ext}"
 
@@ -72,10 +76,16 @@ class LocalStorage(BaseStorage):
     async def save_streaming_file(self, organization_id: str, file_name: str) -> None:
         return
 
-    async def get_streaming_file(self, organization_id: str, file_name: str, use_default: bool = True) -> bytes | None:
-        file_path = Path(f"{SettingsManager.get_settings().STREAMING_FILE_BASE_PATH}/skyvern_screenshot.png")
+    async def get_streaming_file(
+        self, organization_id: str, file_name: str, use_default: bool = True
+    ) -> bytes | None:
+        file_path = Path(
+            f"{SettingsManager.get_settings().STREAMING_FILE_BASE_PATH}/skyvern_screenshot.png"
+        )
         if not use_default:
-            file_path = Path(f"{SettingsManager.get_settings().STREAMING_FILE_BASE_PATH}/{organization_id}/{file_name}")
+            file_path = Path(
+                f"{SettingsManager.get_settings().STREAMING_FILE_BASE_PATH}/{organization_id}/{file_name}"
+            )
         try:
             with open(file_path, "rb") as f:
                 return f.read()
@@ -87,9 +97,13 @@ class LocalStorage(BaseStorage):
             )
             return None
 
-    async def store_browser_session(self, organization_id: str, workflow_permanent_id: str, directory: str) -> None:
+    async def store_browser_session(
+        self, organization_id: str, workflow_permanent_id: str, directory: str
+    ) -> None:
         stored_folder_path = (
-            Path(SettingsManager.get_settings().BROWSER_SESSION_BASE_PATH) / organization_id / workflow_permanent_id
+            Path(SettingsManager.get_settings().BROWSER_SESSION_BASE_PATH)
+            / organization_id
+            / workflow_permanent_id
         )
         if directory == str(stored_folder_path):
             return
@@ -111,9 +125,13 @@ class LocalStorage(BaseStorage):
                 self._create_directories_if_not_exists(target_file_path)
                 shutil.copy2(source_file_path, target_file_path)
 
-    async def retrieve_browser_session(self, organization_id: str, workflow_permanent_id: str) -> str | None:
+    async def retrieve_browser_session(
+        self, organization_id: str, workflow_permanent_id: str
+    ) -> str | None:
         stored_folder_path = (
-            Path(SettingsManager.get_settings().BROWSER_SESSION_BASE_PATH) / organization_id / workflow_permanent_id
+            Path(SettingsManager.get_settings().BROWSER_SESSION_BASE_PATH)
+            / organization_id
+            / workflow_permanent_id
         )
         if not stored_folder_path.exists():
             return None

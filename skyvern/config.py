@@ -5,7 +5,9 @@ from skyvern.constants import SKYVERN_DIR
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=(".env", ".env.staging", ".env.prod"), extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=(".env", ".env.staging", ".env.prod"), extra="ignore"
+    )
 
     ADDITIONAL_MODULES: list[str] = []
 

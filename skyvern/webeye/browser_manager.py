@@ -76,7 +76,10 @@ class BrowserManager:
         # The URL here is only used when creating a new page, and not when using an existing page.
         # This will make sure browser_state.page is not None.
         await browser_state.get_or_create_page(
-            url=task.url, proxy_location=task.proxy_location, task_id=task.task_id, organization_id=task.organization_id
+            url=task.url,
+            proxy_location=task.proxy_location,
+            task_id=task.task_id,
+            organization_id=task.organization_id,
         )
 
         self.pages[task.task_id] = browser_state
@@ -84,7 +87,9 @@ class BrowserManager:
             self.pages[task.workflow_run_id] = browser_state
         return browser_state
 
-    async def get_or_create_for_workflow_run(self, workflow_run: WorkflowRun, url: str | None = None) -> BrowserState:
+    async def get_or_create_for_workflow_run(
+        self, workflow_run: WorkflowRun, url: str | None = None
+    ) -> BrowserState:
         if workflow_run.workflow_run_id in self.pages:
             return self.pages[workflow_run.workflow_run_id]
         LOG.info(
@@ -115,9 +120,13 @@ class BrowserManager:
             return self.pages[workflow_run_id]
         return None
 
-    def set_video_artifact_for_task(self, task: Task, artifacts: list[VideoArtifact]) -> None:
+    def set_video_artifact_for_task(
+        self, task: Task, artifacts: list[VideoArtifact]
+    ) -> None:
         if task.workflow_run_id and task.workflow_run_id in self.pages:
-            self.pages[task.workflow_run_id].browser_artifacts.video_artifacts = artifacts
+            self.pages[task.workflow_run_id].browser_artifacts.video_artifacts = (
+                artifacts
+            )
             return
         if task.task_id in self.pages:
             self.pages[task.task_id].browser_artifacts.video_artifacts = artifacts
@@ -141,11 +150,15 @@ class BrowserManager:
             )
             return []
 
-        for i, video_artifact in enumerate(browser_state.browser_artifacts.video_artifacts):
+        for i, video_artifact in enumerate(
+            browser_state.browser_artifacts.video_artifacts
+        ):
             path = video_artifact.video_path
             if path and os.path.exists(path=path):
                 with open(path, "rb") as f:
-                    browser_state.browser_artifacts.video_artifacts[i].video_data = f.read()
+                    browser_state.browser_artifacts.video_artifacts[i].video_data = (
+                        f.read()
+                    )
 
         return browser_state.browser_artifacts.video_artifacts
 
@@ -177,18 +190,27 @@ class BrowserManager:
         cls.pages = dict()
         LOG.info("BrowserManger is closed")
 
-    async def cleanup_for_task(self, task_id: str, close_browser_on_completion: bool = True) -> BrowserState | None:
+    async def cleanup_for_task(
+        self, task_id: str, close_browser_on_completion: bool = True
+    ) -> BrowserState | None:
         LOG.info("Cleaning up for task")
         browser_state_to_close = self.pages.pop(task_id, None)
         try:
             if browser_state_to_close:
                 async with asyncio.timeout(BROWSER_CLOSE_TIMEOUT):
                     # Stop tracing before closing the browser if tracing is enabled
-                    if browser_state_to_close.browser_context and browser_state_to_close.browser_artifacts.traces_dir:
+                    if (
+                        browser_state_to_close.browser_context
+                        and browser_state_to_close.browser_artifacts.traces_dir
+                    ):
                         trace_path = f"{browser_state_to_close.browser_artifacts.traces_dir}/{task_id}.zip"
-                        await browser_state_to_close.browser_context.tracing.stop(path=trace_path)
+                        await browser_state_to_close.browser_context.tracing.stop(
+                            path=trace_path
+                        )
                         LOG.info("Stopped tracing", trace_path=trace_path)
-                    await browser_state_to_close.close(close_browser_on_completion=close_browser_on_completion)
+                    await browser_state_to_close.close(
+                        close_browser_on_completion=close_browser_on_completion
+                    )
             LOG.info("Task is cleaned up")
         except TimeoutError:
             LOG.warning("Timeout on task cleanup")
@@ -205,12 +227,19 @@ class BrowserManager:
         browser_state_to_close = self.pages.pop(workflow_run_id, None)
         if browser_state_to_close:
             # Stop tracing before closing the browser if tracing is enabled
-            if browser_state_to_close.browser_context and browser_state_to_close.browser_artifacts.traces_dir:
+            if (
+                browser_state_to_close.browser_context
+                and browser_state_to_close.browser_artifacts.traces_dir
+            ):
                 trace_path = f"{browser_state_to_close.browser_artifacts.traces_dir}/{workflow_run_id}.zip"
-                await browser_state_to_close.browser_context.tracing.stop(path=trace_path)
+                await browser_state_to_close.browser_context.tracing.stop(
+                    path=trace_path
+                )
                 LOG.info("Stopped tracing", trace_path=trace_path)
 
-            await browser_state_to_close.close(close_browser_on_completion=close_browser_on_completion)
+            await browser_state_to_close.close(
+                close_browser_on_completion=close_browser_on_completion
+            )
         for task_id in task_ids:
             self.pages.pop(task_id, None)
         LOG.info("Workflow run is cleaned up")
