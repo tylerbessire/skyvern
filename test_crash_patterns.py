@@ -20,10 +20,10 @@ from selenium.webdriver.support import expected_conditions as EC
 # Configure detailed logging
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
+    format="%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
-        logging.FileHandler('crash_pattern_test.log'),
+        logging.FileHandler("crash_pattern_test.log"),
         logging.StreamHandler()
     ]
 )
@@ -78,8 +78,8 @@ class CrashPatternTest:
 
         # Initialize cookies with credentials
         self.update_cookies({
-            'wallet_private_key': self.wallet_key,
-            'public_key': self.public_key
+            "wallet_private_key": self.wallet_key,
+            "public_key": self.public_key
         })
         
     def update_cookies(self, new_cookies):
@@ -212,12 +212,12 @@ class CrashPatternTest:
         """Analyze successful browser connection patterns"""
         try:
             chrome_options = Options()
-            chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
             
             driver = webdriver.Chrome(options=chrome_options)
-            driver.get('https://trustdice.win/crash')
+            driver.get("https://trustdice.win/crash")
             
             # Wait for WebSocket connection
             await asyncio.sleep(5)
@@ -225,13 +225,13 @@ class CrashPatternTest:
             # Extract cookies and headers
             cookies = driver.get_cookies()
             for cookie in cookies:
-                self.update_cookies({cookie['name']: cookie['value']})
+                self.update_cookies({cookie["name"]: cookie["value"]})
             
             # Update headers based on successful connection
             self.headers.update({
-                'Referer': driver.current_url,
-                'sec-ch-ua': driver.execute_script('return navigator.userAgent'),
-                'Cookie': '; '.join([f"{c['name']}={c['value']}" for c in cookies])
+                "Referer": driver.current_url,
+                "sec-ch-ua": driver.execute_script("return navigator.userAgent"),
+                "Cookie": "; ".join([f"{c['name']}={c['value']}" for c in cookies])
             })
             
             driver.quit()

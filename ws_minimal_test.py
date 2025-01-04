@@ -29,11 +29,11 @@ logging.basicConfig(
 
 # Track suspicious patterns
 suspicious_patterns = {
-    'rapid_auth_errors': [],
-    'long_intervals': [],
-    'undefined_states': [],
-    'connection_delays': [],
-    'crash_sequences': []
+    "rapid_auth_errors": [],
+    "long_intervals": [],
+    "undefined_states": [],
+    "connection_delays": [],
+    "crash_sequences": []
 }
 
 class MinimalWSTest:
@@ -57,16 +57,16 @@ class MinimalWSTest:
         
         # Track suspicious patterns
         self.suspicious_patterns: Dict[str, List[Union[float, Tuple[float, str]]]] = {
-            'rapid_auth_errors': [],
-            'long_intervals': [],
-            'undefined_states': [],
-            'connection_delays': [],
-            'crash_sequences': []
+            "rapid_auth_errors": [],
+            "long_intervals": [],
+            "undefined_states": [],
+            "connection_delays": [],
+            "crash_sequences": []
         }
         
         # Get credentials from environment
-        self.wallet_key = os.getenv('WALLET_PRIVATE_KEY')
-        self.public_key = os.getenv('PUBLIC_KEY')
+        self.wallet_key = os.getenv("WALLET_PRIVATE_KEY")
+        self.public_key = os.getenv("PUBLIC_KEY")
         
         if not self.wallet_key or not self.public_key:
             raise ValueError("Missing required environment variables")
@@ -93,8 +93,8 @@ class MinimalWSTest:
         
         # Initialize cookie jar with credentials
         self.update_cookies({
-            'wallet_private_key': quote(self.wallet_key),
-            'public_key': quote(self.public_key)
+            "wallet_private_key": quote(self.wallet_key),
+            "public_key": quote(self.public_key)
         })
         
         # Track message patterns
@@ -126,15 +126,15 @@ class MinimalWSTest:
             message_time = time.time()
             
             # Initialize pattern tracking if not exists
-            if not hasattr(self, 'error_sequence'):
+            if not hasattr(self, "error_sequence"):
                 self.error_sequence = []
-            if not hasattr(self, 'element_counts'):
+            if not hasattr(self, "element_counts"):
                 self.element_counts = []
-            if not hasattr(self, 'bodytext_values'):
+            if not hasattr(self, "bodytext_values"):
                 self.bodytext_values = []
-            if not hasattr(self, 'last_401_time'):
+            if not hasattr(self, "last_401_time"):
                 self.last_401_time = None
-            if not hasattr(self, 'undefined_sequence'):
+            if not hasattr(self, "undefined_sequence"):
                 self.undefined_sequence = []
             
             # Handle Socket.IO message types
@@ -151,7 +151,7 @@ class MinimalWSTest:
                 
             if message.startswith("40"):  # Socket.IO connection established
                 logging.info("Socket.IO namespace connected")
-                if hasattr(self, 'connection_time'):
+                if hasattr(self, "connection_time"):
                     setup_time = time.time() - self.connection_time
                     logging.info(f"Connection setup time: {setup_time:.3f}s")
                     if setup_time > 2.0:
@@ -186,18 +186,18 @@ class MinimalWSTest:
                             self.last_crash_time = current_time
                             
                             # Track element counts
-                            if 'elements' in str(event_data):
+                            if "elements" in str(event_data):
                                 try:
-                                    count = int(str(event_data).split('elements":')[1].split(',')[0])
+                                    count = int(str(event_data).split("elements\":")[1].split(",")[0])
                                     self.element_counts.append((time.time(), count))
                                     self.analyze_element_pattern()
                                 except (ValueError, IndexError):
                                     logging.warning("Failed to parse element count")
                             
                             # Track bodyText values
-                            if 'bodyText' in str(event_data):
+                            if "bodyText" in str(event_data):
                                 try:
-                                    value = int(str(event_data).split('bodyText":')[1].split(',')[0])
+                                    value = int(str(event_data).split("bodyText\":")[1].split(",")[0])
                                     self.bodytext_values.append((time.time(), value))
                                     self.analyze_bodytext_pattern()
                                 except (ValueError, IndexError):
@@ -409,15 +409,19 @@ class MinimalWSTest:
                         if data.startswith('0'):
                             session_data = json.loads(data[1:])
                             self.session_id = session_data.get('sid')
-                            self.ping_interval = session_data.get('pingInterval', 25000)
+                            self.ping_interval = session_data.get("pingInterval", 25000)
                             logging.info(f"Got session ID: {self.session_id}")
                             
                             # Perform post-handshake request
-                            post_data = '40{"jwt":null}'
+                            post_data = "40{\"jwt\":null}"
                             post_url = f"https://trustdice.win/crash/socket.io/?EIO=4&transport=polling&t={self.t}&sid={self.session_id}"
                             
                             if self.session:  # Type guard
-                                async with self.session.post(post_url, data=post_data, headers=socket_headers) as post_response:
+                                async with self.session.post(
+                                    post_url,
+                                    data=post_data,
+                                    headers=socket_headers
+                                ) as post_response:
                                     if post_response.cookies:
                                         for cookie in post_response.cookies.values():
                                             self.update_cookies({cookie.key: cookie.value})

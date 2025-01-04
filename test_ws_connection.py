@@ -30,7 +30,7 @@ class WSPatternAnalyzer:
     def analyze_crash_pattern(self, message: str) -> None:
         """Analyze crash patterns in WebSocket messages"""
         try:
-            if message.startswith('42'):
+            if message.startswith("42"):
                 data = json.loads(message[2:])
                 if len(data) >= 2:
                     event_name = data[0]
@@ -54,9 +54,9 @@ class WSPatternAnalyzer:
                         self.crash_times.append(current_time)
                         
                         # Track pre-crash patterns
-                        if 'elements' in str(event_data):
+                        if "elements" in str(event_data):
                             try:
-                                elements = int(str(event_data).split('elements":')[1].split(',')[0])
+                                elements = int(str(event_data).split("elements\":")[1].split(",")[0])
                                 self.pre_crash_patterns.append((current_time, elements))
                                 self.analyze_element_pattern()
                             except Exception as e:
@@ -152,7 +152,7 @@ async def main() -> None:
         logging.error(f"Test failed: {str(e)}")
     finally:
         # Save analysis results
-        with open('pattern_analysis.json', 'w') as f:
+        with open("pattern_analysis.json", "w") as f:
             json.dump({
                 "intervals": analyzer.intervals,
                 "suspicious_sequences": analyzer.suspicious_sequences,
