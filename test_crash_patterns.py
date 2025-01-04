@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 import asyncio
-import websockets
+import base64
 import json
 import logging
-import time
 import os
-import ssl
-import aiohttp
-import base64
 import secrets
-from urllib.parse import urlencode, quote
+import ssl
+import time
 from collections import deque
+from urllib.parse import quote, urlencode
+
+import aiohttp
+import websockets
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 # Configure detailed logging
 logging.basicConfig(
@@ -46,22 +47,22 @@ class CrashPatternTest:
 
         # Headers for browser simulation
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
             "Accept-Encoding": "gzip, deflate, br",
-            "Origin": "https://trustdice.win",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Cache-Control": "no-cache",
             "Connection": "keep-alive",
+            "Origin": "https://trustdice.win",
+            "Pragma": "no-cache",
             "Sec-Fetch-Dest": "document",
             "Sec-Fetch-Mode": "navigate",
             "Sec-Fetch-Site": "none",
             "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "sec-ch-ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
             "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": "\"Windows\"",
-            "Pragma": "no-cache",
-            "Cache-Control": "no-cache",
-            "Upgrade-Insecure-Requests": "1"
+            "sec-ch-ua-platform": "\"Windows\""
         }
         
         # Pattern tracking
@@ -85,8 +86,8 @@ class CrashPatternTest:
     def update_cookies(self, new_cookies):
         """Update cookies and cookie header"""
         self.cookies.update(new_cookies)
-        cookie_str = '; '.join([f"{k}={v}" for k, v in self.cookies.items()])
-        self.headers['Cookie'] = cookie_str
+        cookie_str = "; ".join([f"{k}={v}" for k, v in self.cookies.items()])
+        self.headers["Cookie"] = cookie_str
         logging.debug(f"Updated cookies: {cookie_str}")
 
     async def get_session_id(self):
